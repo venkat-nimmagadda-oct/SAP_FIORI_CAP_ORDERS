@@ -1,0 +1,203 @@
+{
+  "name": "orders-portal",
+  "version": "1.0.0",
+  "description": "Order Portal — Failed Orders Management on SAP BTP",
+  "private": true,
+  "dependencies": {
+    "@cap-js/postgres": "^2",
+    "@octanner/cap-postgres-onprem-connector": "file:./libs/octanner-cap-postgres-onprem-connector-1.0.1.tgz",
+    "@sap-cloud-sdk/connectivity": "^4.8.0",
+    "@sap-cloud-sdk/http-client": "^4.8.0",
+    "@sap/cds": "^9",
+    "@sap/xsenv": "^6.2.1",
+    "@sap/xssec": "^4",
+    "axios": "^1.11.0",
+    "pg": "^8.16.3",
+    "socks": "^2.8.9"
+  },
+  "devDependencies": {
+    "@cap-js/sqlite": "^2.4",
+    "@sap/cds-dk": "^9",
+    "cds-plugin-ui5": "^0.17.0",
+    "mbt": "^1.2.49",
+    "rimraf": "^5.0.10"
+  },
+  "scripts": {
+    "start": "cds run",
+    "watch": "cds watch",
+    "watch-failedorders": "cds watch --open orders.portal.failedorders/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "watch-allorders": "cds watch --open orders.portal.allorders/index.html?sap-ui-xx-viewCache=false --livereload false",
+    "build": "npx rimraf resources mta_archives && mbt build --mtar archive",
+    "deploy": "cf deploy mta_archives/archive.mtar --retries 1",
+    "undeploy": "cf undeploy orders-portal --delete-services --delete-service-keys --delete-service-brokers"
+  },
+  "cds": {
+    "requires": {
+      "auth": {
+        "[development]": {
+          "kind": "mocked",
+          "users": {
+            "admin@test.com": {
+              "password": "admin",
+              "roles": [
+                "Admin",
+                "Viewer"
+              ]
+            },
+            "casey@test.com": {
+              "password": "casey",
+              "roles": [
+                "Admin",
+                "Viewer"
+              ]
+            },
+            "buyer-us@test.com": {
+              "password": "us",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "1000"
+              }
+            },
+            "buyer-us-intl@test.com": {
+              "password": "us-intl",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "6"
+              }
+            },
+            "buyer-au@test.com": {
+              "password": "au",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "61"
+              }
+            },
+            "buyer-uk@test.com": {
+              "password": "uk",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "1010"
+              }
+            },
+            "buyer-de@test.com": {
+              "password": "de",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "49"
+              }
+            },
+            "buyer-ca@test.com": {
+              "password": "ca",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "3000"
+              }
+            },
+            "buyer-mx@test.com": {
+              "password": "mx",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "52"
+              }
+            },
+            "buyer-jp@test.com": {
+              "password": "jp",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "81"
+              }
+            },
+            "buyer-sg@test.com": {
+              "password": "sg",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "65"
+              }
+            },
+            "buyer-hk@test.com": {
+              "password": "hk",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "852"
+              }
+            },
+            "buyer-cn@test.com": {
+              "password": "cn",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "86"
+              }
+            },
+            "buyer-in@test.com": {
+              "password": "in",
+              "roles": [
+                "Viewer"
+              ],
+              "attr": {
+                "SalesOrg": "91"
+              }
+            },
+            "cpi@test.com": {
+              "password": "cpi",
+              "roles": [
+                "CPIInserter"
+              ]
+            }
+          }
+        },
+        "[production]": {
+          "kind": "xsuaa"
+        }
+      },
+      "db": {
+        "[development]": {
+          "kind": "sqlite",
+          "credentials": {
+            "url": ":memory:"
+          }
+        },
+        "[production]": {
+          "kind": "postgres",
+          "impl": "@cap-js/postgres"
+        }
+      },
+      "connectivity": {
+        "[production]": {
+          "kind": "connectivity"
+        }
+      }
+    },
+    "features": {
+      "fetch_csrf": true
+    }
+  },
+  "workspaces": [
+    "app/*"
+  ],
+  "sapux": [
+    "app/failedorders",
+    "app/allorders"
+  ]
+}

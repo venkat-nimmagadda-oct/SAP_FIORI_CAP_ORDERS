@@ -1,0 +1,2762 @@
+{
+  "namespace": "orders.portal",
+  "definitions": {
+    "orders.portal.OrderStatus": {
+      "kind": "type",
+      "type": "cds.Integer",
+      "enum": {
+        "Complete": {
+          "val": 0
+        },
+        "New": {
+          "val": 1
+        },
+        "Failed": {
+          "val": 2
+        },
+        "Cancelled": {
+          "val": 3
+        },
+        "InProgress": {
+          "val": 4
+        }
+      }
+    },
+    "orders.portal.SupplierOrdersReprocess": {
+      "kind": "entity",
+      "elements": {
+        "ID": {
+          "@title": "Record ID",
+          "key": true,
+          "type": "cds.Integer"
+        },
+        "purchaseOrderNumber": {
+          "@title": "PO Number",
+          "type": "cds.String",
+          "length": 10,
+          "notNull": true
+        },
+        "poLineNumber": {
+          "@title": "PO Line Number",
+          "type": "cds.String",
+          "length": 6,
+          "notNull": true
+        },
+        "salesOrderNumber": {
+          "@title": "SO Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplier": {
+          "@title": "Vendor Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplierName": {
+          "@title": "Vendor Name",
+          "type": "cds.String",
+          "length": 50
+        },
+        "country": {
+          "@title": "Country",
+          "type": "cds.String",
+          "length": 3
+        },
+        "salesOrg": {
+          "@title": "Sales Org",
+          "type": "cds.String",
+          "length": 4
+        },
+        "companyCode": {
+          "@title": "Company Code",
+          "type": "cds.String",
+          "length": 10
+        },
+        "plant": {
+          "@title": "Plant",
+          "type": "cds.String",
+          "length": 10
+        },
+        "octMaterialNumber": {
+          "@title": "OCT Material Number",
+          "type": "cds.String",
+          "length": 18
+        },
+        "vendorMaterialNumber": {
+          "@title": "Vendor Material Number",
+          "type": "cds.String",
+          "length": 35
+        },
+        "tdLine": {
+          "@title": "TD Line",
+          "type": "cds.String",
+          "length": 500
+        },
+        "status": {
+          "@title": "Status",
+          "type": "orders.portal.OrderStatus"
+        },
+        "errorText": {
+          "@title": "Error Text",
+          "type": "cds.String",
+          "length": 500
+        },
+        "customErrorText": {
+          "@title": "Custom Error Text",
+          "type": "cds.String",
+          "length": 1000
+        },
+        "purchaseOrderDate": {
+          "@title": "Order Date",
+          "type": "cds.Date"
+        },
+        "lastRetryDate": {
+          "@title": "Last Retry Timestamp",
+          "type": "cds.Timestamp"
+        },
+        "reprocessCounter": {
+          "@title": "Retry Count",
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "receiverIflowName": {
+          "@title": "Receiver iFlow",
+          "type": "cds.String",
+          "length": 100
+        },
+        "rawData": {
+          "@title": "Raw JSON Payload",
+          "type": "cds.LargeString",
+          "notNull": true
+        },
+        "createdBy": {
+          "@title": "Created By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "createdOn": {
+          "@title": "Created On",
+          "type": "cds.Timestamp"
+        },
+        "changedBy": {
+          "@title": "Last Retried By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "changedOn": {
+          "@title": "Changed On",
+          "type": "cds.Timestamp"
+        },
+        "isProcessing": {
+          "@title": "Is Processing",
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "lockedBy": {
+          "@title": "Locked By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "lockedAt": {
+          "@title": "Locked At",
+          "type": "cds.Timestamp"
+        },
+        "lockExpiresAt": {
+          "@title": "Lock Expires At",
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "orders.portal.OrderHistory": {
+      "kind": "entity",
+      "elements": {
+        "ID": {
+          "@title": "Record ID",
+          "key": true,
+          "type": "cds.Integer"
+        },
+        "purchaseOrderNumber": {
+          "@title": "PO Number",
+          "type": "cds.String",
+          "length": 10,
+          "notNull": true
+        },
+        "poLineNumber": {
+          "@title": "PO Line Number",
+          "type": "cds.String",
+          "length": 6,
+          "notNull": true
+        },
+        "salesOrderNumber": {
+          "@title": "SO Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplier": {
+          "@title": "Vendor Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplierName": {
+          "@title": "Vendor Name",
+          "type": "cds.String",
+          "length": 50
+        },
+        "country": {
+          "@title": "Country",
+          "type": "cds.String",
+          "length": 3
+        },
+        "salesOrg": {
+          "@title": "Sales Org",
+          "type": "cds.String",
+          "length": 4
+        },
+        "companyCode": {
+          "@title": "Company Code",
+          "type": "cds.String",
+          "length": 10
+        },
+        "plant": {
+          "@title": "Plant",
+          "type": "cds.String",
+          "length": 10
+        },
+        "octMaterialNumber": {
+          "@title": "OCT Material Number",
+          "type": "cds.String",
+          "length": 18
+        },
+        "vendorMaterialNumber": {
+          "@title": "Vendor Material Number",
+          "type": "cds.String",
+          "length": 35
+        },
+        "status": {
+          "@title": "Status",
+          "type": "orders.portal.OrderStatus"
+        },
+        "errorText": {
+          "@title": "Error Text",
+          "type": "cds.String",
+          "length": 500
+        },
+        "purchaseOrderDate": {
+          "@title": "Order Date",
+          "type": "cds.Date"
+        },
+        "processedBy": {
+          "@title": "Processed By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "processedAt": {
+          "@title": "Processed At",
+          "type": "cds.Timestamp"
+        },
+        "cancelledBy": {
+          "@title": "Cancelled By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "cancelledAt": {
+          "@title": "Cancelled At",
+          "type": "cds.Timestamp"
+        },
+        "sourceTable": {
+          "@title": "Source",
+          "type": "cds.String",
+          "length": 30
+        },
+        "createdBy": {
+          "@title": "Created By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "createdOn": {
+          "@title": "Created On",
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "orders.portal.AuditLog": {
+      "kind": "entity",
+      "includes": [
+        "cuid",
+        "managed"
+      ],
+      "elements": {
+        "ID": {
+          "key": true,
+          "type": "cds.UUID"
+        },
+        "createdAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "modifiedAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@cds.on.update": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "modifiedBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@cds.on.update": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "action": {
+          "@title": "Action",
+          "type": "cds.String",
+          "length": 30
+        },
+        "purchaseOrderNumber": {
+          "@title": "PO Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "poLineNumber": {
+          "@title": "PO Line Number",
+          "type": "cds.String",
+          "length": 6
+        },
+        "supplier": {
+          "@title": "Vendor Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "status": {
+          "@title": "Result",
+          "type": "cds.String",
+          "length": 20
+        },
+        "message": {
+          "@title": "Message",
+          "type": "cds.String",
+          "length": 2000
+        },
+        "performedBy": {
+          "@title": "Performed By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "salesOrg": {
+          "@title": "Sales Org",
+          "type": "cds.String",
+          "length": 4
+        }
+      }
+    },
+    "orders.portal.UserFilterVariants": {
+      "kind": "entity",
+      "includes": [
+        "cuid",
+        "managed"
+      ],
+      "elements": {
+        "ID": {
+          "key": true,
+          "type": "cds.UUID"
+        },
+        "createdAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "modifiedAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@cds.on.update": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "modifiedBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@cds.on.update": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "userId": {
+          "@title": "User ID",
+          "type": "cds.String",
+          "length": 255
+        },
+        "viewName": {
+          "@title": "View Name",
+          "type": "cds.String",
+          "length": 50
+        },
+        "variantName": {
+          "@title": "Variant Name",
+          "type": "cds.String",
+          "length": 100
+        },
+        "filterJSON": {
+          "@title": "Filter State (JSON)",
+          "type": "cds.LargeString"
+        },
+        "isDefault": {
+          "@title": "Is Default",
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        }
+      }
+    },
+    "orders.portal.StatusCodes": {
+      "kind": "entity",
+      "elements": {
+        "code": {
+          "@title": "Status Code",
+          "key": true,
+          "type": "cds.Integer"
+        },
+        "text": {
+          "@title": "Description",
+          "type": "cds.String",
+          "length": 50
+        }
+      }
+    },
+    "SupplierOrderService": {
+      "@source": "srv/service.cds",
+      "kind": "service",
+      "@path": "supplier-order",
+      "@requires": "authenticated-user"
+    },
+    "SupplierOrderService.SupplierOrdersReprocess": {
+      "kind": "entity",
+      "@cds.search.purchaseOrderNumber": true,
+      "@cds.search.poLineNumber": true,
+      "@cds.search.salesOrderNumber": true,
+      "@cds.search.supplier": true,
+      "@cds.search.supplierName": true,
+      "@cds.search.country": true,
+      "@cds.search.salesOrg": true,
+      "@cds.search.companyCode": true,
+      "@cds.search.octMaterialNumber": true,
+      "@cds.search.vendorMaterialNumber": true,
+      "@cds.search.errorText": true,
+      "@cds.search.customErrorText": true,
+      "@cds.search.changedBy": true,
+      "@restrict": [
+        {
+          "grant": "READ",
+          "to": "Viewer"
+        },
+        {
+          "grant": "READ",
+          "to": "Admin"
+        },
+        {
+          "grant": "CREATE",
+          "to": "CPIInserter"
+        },
+        {
+          "grant": [
+            "UPDATE",
+            "DELETE"
+          ],
+          "to": "Admin"
+        },
+        {
+          "grant": [
+            "resend",
+            "cancel"
+          ],
+          "to": "Admin"
+        }
+      ],
+      "@UI.HeaderInfo.TypeName": "Failed Order",
+      "@UI.HeaderInfo.TypeNamePlural": "Failed Orders",
+      "@UI.HeaderInfo.Title.$Type": "UI.DataField",
+      "@UI.HeaderInfo.Title.Value": {
+        "=": "purchaseOrderNumber"
+      },
+      "@UI.HeaderInfo.Description.$Type": "UI.DataField",
+      "@UI.HeaderInfo.Description.Value": {
+        "=": "supplierName"
+      },
+      "@UI.SelectionFields": [
+        {
+          "=": "purchaseOrderNumber"
+        },
+        {
+          "=": "supplier"
+        },
+        {
+          "=": "supplierName"
+        },
+        {
+          "=": "salesOrg"
+        },
+        {
+          "=": "country"
+        },
+        {
+          "=": "salesOrderNumber"
+        },
+        {
+          "=": "octMaterialNumber"
+        },
+        {
+          "=": "changedBy"
+        }
+      ],
+      "@UI.Identification": [
+        {
+          "$Type": "UI.DataFieldForAction",
+          "Action": "SupplierOrderService.resend",
+          "Label": "Resend"
+        },
+        {
+          "$Type": "UI.DataFieldForAction",
+          "Action": "SupplierOrderService.cancel",
+          "Label": "Cancel"
+        }
+      ],
+      "@UI.LineItem": [
+        {
+          "$Type": "UI.DataFieldForAction",
+          "Action": "SupplierOrderService.resend",
+          "Label": "Resend"
+        },
+        {
+          "$Type": "UI.DataFieldForAction",
+          "Action": "SupplierOrderService.cancel",
+          "Label": "Cancel"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderNumber"
+          },
+          "Label": "PO Number",
+          "@UI.Importance": {
+            "#": "High"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "poLineNumber"
+          },
+          "Label": "PO Line",
+          "@UI.Importance": {
+            "#": "High"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplier"
+          },
+          "Label": "Vendor #",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplierName"
+          },
+          "Label": "Vendor Name",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrg"
+          },
+          "Label": "Sales Org",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "errorText"
+          },
+          "Label": "Error",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "lastRetryDate"
+          },
+          "Label": "Last Retry",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "reprocessCounter"
+          },
+          "Label": "Retry Count",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "changedBy"
+          },
+          "Label": "Last Retried By",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrderNumber"
+          },
+          "Label": "SO Number",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "country"
+          },
+          "Label": "Country",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "octMaterialNumber"
+          },
+          "Label": "OCT Material",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "vendorMaterialNumber"
+          },
+          "Label": "Vendor Material",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "tdLine"
+          },
+          "Label": "TD Line",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderDate"
+          },
+          "Label": "Order Date",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "customErrorText"
+          },
+          "Label": "Custom Error",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        }
+      ],
+      "@UI.Facets": [
+        {
+          "$Type": "UI.ReferenceFacet",
+          "ID": "OrderDetails",
+          "Label": "Order Details",
+          "Target": "@UI.FieldGroup#OrderInfo"
+        },
+        {
+          "$Type": "UI.ReferenceFacet",
+          "ID": "MaterialDetails",
+          "Label": "Material Information",
+          "Target": "@UI.FieldGroup#MaterialInfo"
+        },
+        {
+          "$Type": "UI.ReferenceFacet",
+          "ID": "ProcessingDetails",
+          "Label": "Processing Information",
+          "Target": "@UI.FieldGroup#ProcessingInfo"
+        },
+        {
+          "$Type": "UI.ReferenceFacet",
+          "ID": "PayloadDetails",
+          "Label": "Raw Payload",
+          "Target": "@UI.FieldGroup#PayloadInfo"
+        }
+      ],
+      "@UI.FieldGroup#OrderInfo.Label": "Order Information",
+      "@UI.FieldGroup#OrderInfo.Data": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderNumber"
+          },
+          "Label": "PO Number"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "poLineNumber"
+          },
+          "Label": "PO Line Number"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrderNumber"
+          },
+          "Label": "SO Number"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplier"
+          },
+          "Label": "Vendor Number"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplierName"
+          },
+          "Label": "Vendor Name"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "country"
+          },
+          "Label": "Country"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrg"
+          },
+          "Label": "Sales Org"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderDate"
+          },
+          "Label": "Order Date"
+        }
+      ],
+      "@UI.FieldGroup#MaterialInfo.Label": "Material Information",
+      "@UI.FieldGroup#MaterialInfo.Data": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "octMaterialNumber"
+          },
+          "Label": "OCT Material Number"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "vendorMaterialNumber"
+          },
+          "Label": "Vendor Material Number"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "tdLine"
+          },
+          "Label": "TD Line"
+        }
+      ],
+      "@UI.FieldGroup#ProcessingInfo.Label": "Processing Information",
+      "@UI.FieldGroup#ProcessingInfo.Data": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "errorText"
+          },
+          "Label": "Error Text"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "customErrorText"
+          },
+          "Label": "Custom Error Text"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "lastRetryDate"
+          },
+          "Label": "Last Retry Timestamp"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "reprocessCounter"
+          },
+          "Label": "Retry Count"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "changedBy"
+          },
+          "Label": "Last Retried By"
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "receiverIflowName"
+          },
+          "Label": "Receiver iFlow"
+        }
+      ],
+      "@UI.FieldGroup#PayloadInfo.Label": "Raw Payload",
+      "@UI.FieldGroup#PayloadInfo.Data": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "rawData"
+          },
+          "Label": "JSON Payload"
+        }
+      ],
+      "@Capabilities.DeleteRestrictions.Deletable": false,
+      "projection": {
+        "from": {
+          "ref": [
+            "orders.portal.SupplierOrdersReprocess"
+          ]
+        }
+      },
+      "elements": {
+        "ID": {
+          "@title": "Record ID",
+          "key": true,
+          "type": "cds.Integer"
+        },
+        "purchaseOrderNumber": {
+          "@title": "PO Number",
+          "type": "cds.String",
+          "length": 10,
+          "notNull": true
+        },
+        "poLineNumber": {
+          "@title": "PO Line Number",
+          "type": "cds.String",
+          "length": 6,
+          "notNull": true
+        },
+        "salesOrderNumber": {
+          "@title": "SO Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplier": {
+          "@title": "Vendor Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplierName": {
+          "@title": "Vendor Name",
+          "type": "cds.String",
+          "length": 50
+        },
+        "country": {
+          "@title": "Country",
+          "type": "cds.String",
+          "length": 3
+        },
+        "salesOrg": {
+          "@title": "Sales Org",
+          "type": "cds.String",
+          "length": 4
+        },
+        "companyCode": {
+          "@UI.Hidden": true,
+          "@title": "Company Code",
+          "type": "cds.String",
+          "length": 10
+        },
+        "plant": {
+          "@title": "Plant",
+          "type": "cds.String",
+          "length": 10
+        },
+        "octMaterialNumber": {
+          "@title": "OCT Material Number",
+          "type": "cds.String",
+          "length": 18
+        },
+        "vendorMaterialNumber": {
+          "@title": "Vendor Material Number",
+          "type": "cds.String",
+          "length": 35
+        },
+        "tdLine": {
+          "@title": "TD Line",
+          "type": "cds.String",
+          "length": 500
+        },
+        "status": {
+          "@Common.ValueList.CollectionPath": "StatusCodes",
+          "@Common.ValueList.Parameters": [
+            {
+              "$Type": "Common.ValueListParameterInOut",
+              "LocalDataProperty": {
+                "=": "status"
+              },
+              "ValueListProperty": "code"
+            },
+            {
+              "$Type": "Common.ValueListParameterDisplayOnly",
+              "ValueListProperty": "text"
+            }
+          ],
+          "@UI.Hidden": true,
+          "@title": "Status",
+          "type": "orders.portal.OrderStatus",
+          "enum": {
+            "Complete": {
+              "val": 0
+            },
+            "New": {
+              "val": 1
+            },
+            "Failed": {
+              "val": 2
+            },
+            "Cancelled": {
+              "val": 3
+            },
+            "InProgress": {
+              "val": 4
+            }
+          }
+        },
+        "errorText": {
+          "@title": "Error Text",
+          "type": "cds.String",
+          "length": 500
+        },
+        "customErrorText": {
+          "@title": "Custom Error Text",
+          "type": "cds.String",
+          "length": 1000
+        },
+        "purchaseOrderDate": {
+          "@title": "Order Date",
+          "type": "cds.Date"
+        },
+        "lastRetryDate": {
+          "@title": "Last Retry Timestamp",
+          "type": "cds.Timestamp"
+        },
+        "reprocessCounter": {
+          "@title": "Retry Count",
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "receiverIflowName": {
+          "@title": "Receiver iFlow",
+          "type": "cds.String",
+          "length": 100
+        },
+        "rawData": {
+          "@title": "Raw JSON Payload",
+          "type": "cds.LargeString",
+          "notNull": true
+        },
+        "createdBy": {
+          "@UI.Hidden": true,
+          "@title": "Created By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "createdOn": {
+          "@UI.Hidden": true,
+          "@title": "Created On",
+          "type": "cds.Timestamp"
+        },
+        "changedBy": {
+          "@title": "Last Retried By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "changedOn": {
+          "@UI.Hidden": true,
+          "@title": "Changed On",
+          "type": "cds.Timestamp"
+        },
+        "isProcessing": {
+          "@UI.Hidden": true,
+          "@title": "Is Processing",
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        },
+        "lockedBy": {
+          "@UI.Hidden": true,
+          "@title": "Locked By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "lockedAt": {
+          "@UI.Hidden": true,
+          "@title": "Locked At",
+          "type": "cds.Timestamp"
+        },
+        "lockExpiresAt": {
+          "@UI.Hidden": true,
+          "@title": "Lock Expires At",
+          "type": "cds.Timestamp"
+        }
+      },
+      "actions": {
+        "resend": {
+          "kind": "action",
+          "returns": {
+            "type": "SupplierOrderService.ActionResult"
+          }
+        },
+        "cancel": {
+          "kind": "action",
+          "returns": {
+            "type": "SupplierOrderService.ActionResult"
+          }
+        }
+      }
+    },
+    "SupplierOrderService.OrderHistory": {
+      "kind": "entity",
+      "@readonly": true,
+      "@cds.search.purchaseOrderNumber": true,
+      "@cds.search.poLineNumber": true,
+      "@cds.search.salesOrderNumber": true,
+      "@cds.search.supplier": true,
+      "@cds.search.supplierName": true,
+      "@cds.search.country": true,
+      "@cds.search.salesOrg": true,
+      "@cds.search.companyCode": true,
+      "@cds.search.octMaterialNumber": true,
+      "@cds.search.vendorMaterialNumber": true,
+      "@cds.search.processedBy": true,
+      "@cds.search.cancelledBy": true,
+      "@restrict": [
+        {
+          "grant": "READ",
+          "to": "Viewer"
+        },
+        {
+          "grant": "READ",
+          "to": "Admin"
+        }
+      ],
+      "@UI.HeaderInfo.TypeName": "Order",
+      "@UI.HeaderInfo.TypeNamePlural": "Orders",
+      "@UI.HeaderInfo.Title.$Type": "UI.DataField",
+      "@UI.HeaderInfo.Title.Value": {
+        "=": "purchaseOrderNumber"
+      },
+      "@UI.HeaderInfo.Description.$Type": "UI.DataField",
+      "@UI.HeaderInfo.Description.Value": {
+        "=": "supplierName"
+      },
+      "@UI.SelectionFields": [
+        {
+          "=": "purchaseOrderNumber"
+        },
+        {
+          "=": "supplier"
+        },
+        {
+          "=": "supplierName"
+        },
+        {
+          "=": "salesOrg"
+        },
+        {
+          "=": "country"
+        },
+        {
+          "=": "salesOrderNumber"
+        },
+        {
+          "=": "status"
+        },
+        {
+          "=": "purchaseOrderDate"
+        },
+        {
+          "=": "processedBy"
+        },
+        {
+          "=": "cancelledBy"
+        }
+      ],
+      "@UI.LineItem": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderNumber"
+          },
+          "Label": "PO Number",
+          "@UI.Importance": {
+            "#": "High"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "poLineNumber"
+          },
+          "Label": "PO Line",
+          "@UI.Importance": {
+            "#": "High"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplier"
+          },
+          "Label": "Vendor #",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplierName"
+          },
+          "Label": "Vendor Name",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrg"
+          },
+          "Label": "Sales Org",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderDate"
+          },
+          "Label": "Order Date",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "status"
+          },
+          "Label": "Status",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "processedAt"
+          },
+          "Label": "Processed At",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "processedBy"
+          },
+          "Label": "Processed By",
+          "@UI.Importance": {
+            "#": "Medium"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrderNumber"
+          },
+          "Label": "SO Number",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "country"
+          },
+          "Label": "Country",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "octMaterialNumber"
+          },
+          "Label": "OCT Material",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "vendorMaterialNumber"
+          },
+          "Label": "Vendor Material",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "errorText"
+          },
+          "Label": "Error",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "cancelledAt"
+          },
+          "Label": "Cancelled At",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "cancelledBy"
+          },
+          "Label": "Cancelled By",
+          "@UI.Importance": {
+            "#": "Low"
+          }
+        }
+      ],
+      "@UI.Facets": [
+        {
+          "$Type": "UI.ReferenceFacet",
+          "ID": "OrderDetails",
+          "Label": "Order Details",
+          "Target": "@UI.FieldGroup#OrderInfo"
+        },
+        {
+          "$Type": "UI.ReferenceFacet",
+          "ID": "MaterialDetails",
+          "Label": "Material Information",
+          "Target": "@UI.FieldGroup#MaterialInfo"
+        },
+        {
+          "$Type": "UI.ReferenceFacet",
+          "ID": "StatusInfo",
+          "Label": "Status & Audit",
+          "Target": "@UI.FieldGroup#StatusInfo"
+        }
+      ],
+      "@UI.FieldGroup#OrderInfo.Label": "Order Information",
+      "@UI.FieldGroup#OrderInfo.Data": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderNumber"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "poLineNumber"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrderNumber"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplier"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "supplierName"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "country"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "salesOrg"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "purchaseOrderDate"
+          }
+        }
+      ],
+      "@UI.FieldGroup#MaterialInfo.Label": "Material Information",
+      "@UI.FieldGroup#MaterialInfo.Data": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "octMaterialNumber"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "vendorMaterialNumber"
+          }
+        }
+      ],
+      "@UI.FieldGroup#StatusInfo.Label": "Status & Audit",
+      "@UI.FieldGroup#StatusInfo.Data": [
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "status"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "errorText"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "cancelledBy"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "cancelledAt"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "processedBy"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "processedAt"
+          }
+        },
+        {
+          "$Type": "UI.DataField",
+          "Value": {
+            "=": "sourceTable"
+          }
+        }
+      ],
+      "@Capabilities.DeleteRestrictions.Deletable": false,
+      "@Capabilities.InsertRestrictions.Insertable": false,
+      "@Capabilities.UpdateRestrictions.Updatable": false,
+      "projection": {
+        "from": {
+          "ref": [
+            "orders.portal.OrderHistory"
+          ]
+        }
+      },
+      "elements": {
+        "ID": {
+          "@title": "Record ID",
+          "key": true,
+          "type": "cds.Integer"
+        },
+        "purchaseOrderNumber": {
+          "@title": "PO Number",
+          "type": "cds.String",
+          "length": 10,
+          "notNull": true
+        },
+        "poLineNumber": {
+          "@title": "PO Line Number",
+          "type": "cds.String",
+          "length": 6,
+          "notNull": true
+        },
+        "salesOrderNumber": {
+          "@title": "SO Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplier": {
+          "@title": "Vendor Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "supplierName": {
+          "@title": "Vendor Name",
+          "type": "cds.String",
+          "length": 50
+        },
+        "country": {
+          "@title": "Country",
+          "type": "cds.String",
+          "length": 3
+        },
+        "salesOrg": {
+          "@title": "Sales Org",
+          "type": "cds.String",
+          "length": 4
+        },
+        "companyCode": {
+          "@title": "Company Code",
+          "type": "cds.String",
+          "length": 10
+        },
+        "plant": {
+          "@title": "Plant",
+          "type": "cds.String",
+          "length": 10
+        },
+        "octMaterialNumber": {
+          "@title": "OCT Material Number",
+          "type": "cds.String",
+          "length": 18
+        },
+        "vendorMaterialNumber": {
+          "@title": "Vendor Material Number",
+          "type": "cds.String",
+          "length": 35
+        },
+        "status": {
+          "@Common.ValueList.CollectionPath": "StatusCodes",
+          "@Common.ValueList.Parameters": [
+            {
+              "$Type": "Common.ValueListParameterInOut",
+              "LocalDataProperty": {
+                "=": "status"
+              },
+              "ValueListProperty": "code"
+            },
+            {
+              "$Type": "Common.ValueListParameterDisplayOnly",
+              "ValueListProperty": "text"
+            }
+          ],
+          "@title": "Status",
+          "type": "orders.portal.OrderStatus",
+          "enum": {
+            "Complete": {
+              "val": 0
+            },
+            "New": {
+              "val": 1
+            },
+            "Failed": {
+              "val": 2
+            },
+            "Cancelled": {
+              "val": 3
+            },
+            "InProgress": {
+              "val": 4
+            }
+          }
+        },
+        "errorText": {
+          "@title": "Error Text",
+          "type": "cds.String",
+          "length": 500
+        },
+        "purchaseOrderDate": {
+          "@title": "Order Date",
+          "type": "cds.Date"
+        },
+        "processedBy": {
+          "@title": "Processed By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "processedAt": {
+          "@title": "Processed At",
+          "type": "cds.Timestamp"
+        },
+        "cancelledBy": {
+          "@title": "Cancelled By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "cancelledAt": {
+          "@title": "Cancelled At",
+          "type": "cds.Timestamp"
+        },
+        "sourceTable": {
+          "@title": "Source",
+          "type": "cds.String",
+          "length": 30
+        },
+        "createdBy": {
+          "@title": "Created By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "createdOn": {
+          "@title": "Created On",
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "SupplierOrderService.UserFilterVariants": {
+      "kind": "entity",
+      "@restrict": [
+        {
+          "grant": "*",
+          "to": "authenticated-user"
+        }
+      ],
+      "projection": {
+        "from": {
+          "ref": [
+            "orders.portal.UserFilterVariants"
+          ]
+        }
+      },
+      "elements": {
+        "ID": {
+          "key": true,
+          "type": "cds.UUID"
+        },
+        "createdAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "modifiedAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@cds.on.update": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "modifiedBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@cds.on.update": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "userId": {
+          "@title": "User ID",
+          "type": "cds.String",
+          "length": 255
+        },
+        "viewName": {
+          "@title": "View Name",
+          "type": "cds.String",
+          "length": 50
+        },
+        "variantName": {
+          "@title": "Variant Name",
+          "type": "cds.String",
+          "length": 100
+        },
+        "filterJSON": {
+          "@title": "Filter State (JSON)",
+          "type": "cds.LargeString"
+        },
+        "isDefault": {
+          "@title": "Is Default",
+          "type": "cds.Boolean",
+          "default": {
+            "val": false
+          }
+        }
+      }
+    },
+    "SupplierOrderService.AuditLog": {
+      "kind": "entity",
+      "@readonly": true,
+      "@cds.search.action": true,
+      "@cds.search.purchaseOrderNumber": true,
+      "@cds.search.supplier": true,
+      "@cds.search.performedBy": true,
+      "@cds.search.salesOrg": true,
+      "@cds.search.message": true,
+      "@restrict": [
+        {
+          "grant": "READ",
+          "to": "Admin"
+        }
+      ],
+      "projection": {
+        "from": {
+          "ref": [
+            "orders.portal.AuditLog"
+          ]
+        }
+      },
+      "elements": {
+        "ID": {
+          "key": true,
+          "type": "cds.UUID"
+        },
+        "createdAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "modifiedAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@cds.on.update": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "modifiedBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@cds.on.update": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "action": {
+          "@title": "Action",
+          "type": "cds.String",
+          "length": 30
+        },
+        "purchaseOrderNumber": {
+          "@title": "PO Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "poLineNumber": {
+          "@title": "PO Line Number",
+          "type": "cds.String",
+          "length": 6
+        },
+        "supplier": {
+          "@title": "Vendor Number",
+          "type": "cds.String",
+          "length": 10
+        },
+        "status": {
+          "@title": "Result",
+          "type": "cds.String",
+          "length": 20
+        },
+        "message": {
+          "@title": "Message",
+          "type": "cds.String",
+          "length": 2000
+        },
+        "performedBy": {
+          "@title": "Performed By",
+          "type": "cds.String",
+          "length": 255
+        },
+        "salesOrg": {
+          "@title": "Sales Org",
+          "type": "cds.String",
+          "length": 4
+        }
+      }
+    },
+    "SupplierOrderService.StatusCodes": {
+      "kind": "entity",
+      "@readonly": true,
+      "projection": {
+        "from": {
+          "ref": [
+            "orders.portal.StatusCodes"
+          ]
+        }
+      },
+      "elements": {
+        "code": {
+          "@title": "Status Code",
+          "key": true,
+          "type": "cds.Integer"
+        },
+        "text": {
+          "@title": "Description",
+          "type": "cds.String",
+          "length": 50
+        }
+      }
+    },
+    "SupplierOrderService.getTileCount": {
+      "kind": "function",
+      "params": {
+        "timeRange": {
+          "type": "cds.String"
+        },
+        "tileType": {
+          "type": "cds.String"
+        }
+      },
+      "returns": {
+        "type": "SupplierOrderService.TileCountData"
+      }
+    },
+    "SupplierOrderService.TileCountData": {
+      "kind": "type",
+      "elements": {
+        "number": {
+          "type": "cds.Integer"
+        },
+        "numberUnit": {
+          "type": "cds.String"
+        },
+        "info": {
+          "type": "cds.String"
+        },
+        "infoState": {
+          "type": "cds.String"
+        },
+        "title": {
+          "type": "cds.String"
+        },
+        "subtitle": {
+          "type": "cds.String"
+        }
+      }
+    },
+    "SupplierOrderService.ActionResult": {
+      "kind": "type",
+      "elements": {
+        "success": {
+          "type": "cds.Boolean"
+        },
+        "message": {
+          "type": "cds.String"
+        }
+      }
+    },
+    "cds.outbox.Messages": {
+      "kind": "entity",
+      "elements": {
+        "ID": {
+          "key": true,
+          "type": "cds.UUID"
+        },
+        "timestamp": {
+          "type": "cds.Timestamp"
+        },
+        "target": {
+          "type": "cds.String"
+        },
+        "msg": {
+          "type": "cds.LargeString"
+        },
+        "attempts": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "partition": {
+          "type": "cds.Integer",
+          "default": {
+            "val": 0
+          }
+        },
+        "lastError": {
+          "type": "cds.LargeString"
+        },
+        "lastAttemptTimestamp": {
+          "type": "cds.Timestamp"
+        },
+        "status": {
+          "type": "cds.String",
+          "length": 23
+        },
+        "task": {
+          "type": "cds.String",
+          "length": 255
+        },
+        "appid": {
+          "type": "cds.String",
+          "length": 255
+        }
+      }
+    },
+    "Language": {
+      "kind": "type",
+      "@title": "{i18n>Language}",
+      "@description": "{i18n>LanguageCode.Description}",
+      "type": "cds.Association",
+      "target": "sap.common.Languages",
+      "keys": [
+        {
+          "ref": [
+            "code"
+          ]
+        }
+      ]
+    },
+    "Currency": {
+      "kind": "type",
+      "@title": "{i18n>Currency}",
+      "@description": "{i18n>CurrencyCode.Description}",
+      "type": "cds.Association",
+      "target": "sap.common.Currencies",
+      "keys": [
+        {
+          "ref": [
+            "code"
+          ]
+        }
+      ]
+    },
+    "Country": {
+      "kind": "type",
+      "@title": "{i18n>Country}",
+      "@description": "{i18n>CountryCode.Description}",
+      "type": "cds.Association",
+      "target": "sap.common.Countries",
+      "keys": [
+        {
+          "ref": [
+            "code"
+          ]
+        }
+      ]
+    },
+    "Timezone": {
+      "kind": "type",
+      "type": "cds.Association",
+      "target": "sap.common.Timezones",
+      "keys": [
+        {
+          "ref": [
+            "code"
+          ]
+        }
+      ]
+    },
+    "sap.common": {
+      "kind": "context"
+    },
+    "sap.common.Locale": {
+      "kind": "type",
+      "@title": "{i18n>LanguageCode}",
+      "type": "cds.String",
+      "length": 14
+    },
+    "sap.common.Languages": {
+      "kind": "entity",
+      "@cds.autoexpose": true,
+      "@cds.persistence.skip": "if-unused",
+      "@UI.Identification": [
+        {
+          "Value": {
+            "=": "name"
+          }
+        }
+      ],
+      "@cds.odata.valuelist": true,
+      "includes": [
+        "sap.common.CodeList"
+      ],
+      "elements": {
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@Common.Text": {
+            "=": "name"
+          },
+          "@title": "{i18n>LanguageCode}",
+          "key": true,
+          "type": "sap.common.Locale",
+          "length": 14
+        },
+        "texts": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "sap.common.Languages.texts",
+          "on": [
+            {
+              "ref": [
+                "texts",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            }
+          ]
+        },
+        "localized": {
+          "type": "cds.Association",
+          "target": "sap.common.Languages.texts",
+          "on": [
+            {
+              "ref": [
+                "localized",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            },
+            "and",
+            {
+              "ref": [
+                "localized",
+                "locale"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$user",
+                "locale"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "sap.common.Countries": {
+      "kind": "entity",
+      "@cds.autoexpose": true,
+      "@cds.persistence.skip": "if-unused",
+      "@UI.Identification": [
+        {
+          "Value": {
+            "=": "name"
+          }
+        }
+      ],
+      "@cds.odata.valuelist": true,
+      "includes": [
+        "sap.common.CodeList"
+      ],
+      "elements": {
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@title": "{i18n>CountryCode}",
+          "@Common.Text": {
+            "=": "name"
+          },
+          "key": true,
+          "type": "cds.String",
+          "length": 3
+        },
+        "texts": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "sap.common.Countries.texts",
+          "on": [
+            {
+              "ref": [
+                "texts",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            }
+          ]
+        },
+        "localized": {
+          "type": "cds.Association",
+          "target": "sap.common.Countries.texts",
+          "on": [
+            {
+              "ref": [
+                "localized",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            },
+            "and",
+            {
+              "ref": [
+                "localized",
+                "locale"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$user",
+                "locale"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "sap.common.Currencies": {
+      "kind": "entity",
+      "@cds.autoexpose": true,
+      "@cds.persistence.skip": "if-unused",
+      "@UI.Identification": [
+        {
+          "Value": {
+            "=": "name"
+          }
+        }
+      ],
+      "@cds.odata.valuelist": true,
+      "includes": [
+        "sap.common.CodeList"
+      ],
+      "elements": {
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@title": "{i18n>CurrencyCode}",
+          "@Common.Text": {
+            "=": "name"
+          },
+          "key": true,
+          "type": "cds.String",
+          "length": 3
+        },
+        "symbol": {
+          "@title": "{i18n>CurrencySymbol}",
+          "type": "cds.String",
+          "length": 5
+        },
+        "minorUnit": {
+          "@title": "{i18n>CurrencyMinorUnit}",
+          "type": "cds.Int16"
+        },
+        "texts": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "sap.common.Currencies.texts",
+          "on": [
+            {
+              "ref": [
+                "texts",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            }
+          ]
+        },
+        "localized": {
+          "type": "cds.Association",
+          "target": "sap.common.Currencies.texts",
+          "on": [
+            {
+              "ref": [
+                "localized",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            },
+            "and",
+            {
+              "ref": [
+                "localized",
+                "locale"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$user",
+                "locale"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "sap.common.Timezones": {
+      "kind": "entity",
+      "@cds.autoexpose": true,
+      "@cds.persistence.skip": "if-unused",
+      "@UI.Identification": [
+        {
+          "Value": {
+            "=": "name"
+          }
+        }
+      ],
+      "@cds.odata.valuelist": true,
+      "includes": [
+        "sap.common.CodeList"
+      ],
+      "elements": {
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@title": "{i18n>TimeZoneCode}",
+          "key": true,
+          "type": "cds.String",
+          "length": 100
+        },
+        "texts": {
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "target": "sap.common.Timezones.texts",
+          "on": [
+            {
+              "ref": [
+                "texts",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            }
+          ]
+        },
+        "localized": {
+          "type": "cds.Association",
+          "target": "sap.common.Timezones.texts",
+          "on": [
+            {
+              "ref": [
+                "localized",
+                "code"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "code"
+              ]
+            },
+            "and",
+            {
+              "ref": [
+                "localized",
+                "locale"
+              ]
+            },
+            "=",
+            {
+              "ref": [
+                "$user",
+                "locale"
+              ]
+            }
+          ]
+        }
+      }
+    },
+    "sap.common.CodeList": {
+      "kind": "aspect",
+      "@cds.autoexpose": true,
+      "@cds.persistence.skip": "if-unused",
+      "@UI.Identification": [
+        {
+          "Value": {
+            "=": "name"
+          }
+        }
+      ],
+      "@cds.odata.valuelist": true,
+      "elements": {
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": true,
+          "type": "cds.String",
+          "length": 1000
+        }
+      }
+    },
+    "sap.common.TextsAspect": {
+      "kind": "aspect",
+      "elements": {
+        "locale": {
+          "@title": "{i18n>LanguageCode}",
+          "key": true,
+          "type": "sap.common.Locale",
+          "length": 14
+        }
+      }
+    },
+    "sap.common.FlowHistory": {
+      "kind": "aspect",
+      "@cds.persistence.skip": "if-unused",
+      "elements": {
+        "transitions_": {
+          "@odata.draft.enabled": false,
+          "type": "cds.Composition",
+          "cardinality": {
+            "max": "*"
+          },
+          "targetAspect": {
+            "elements": {
+              "timestamp": {
+                "@cds.on.insert": {
+                  "=": "$now"
+                },
+                "@UI.HiddenFilter": true,
+                "@UI.ExcludeFromNavigationContext": true,
+                "@Core.Immutable": true,
+                "@title": "{i18n>CreatedAt}",
+                "@readonly": true,
+                "key": true,
+                "type": {
+                  "ref": [
+                    "managed",
+                    "createdAt"
+                  ]
+                }
+              },
+              "user": {
+                "@cds.on.insert": {
+                  "=": "$user"
+                },
+                "@UI.HiddenFilter": true,
+                "@UI.ExcludeFromNavigationContext": true,
+                "@Core.Immutable": true,
+                "@title": "{i18n>CreatedBy}",
+                "@readonly": true,
+                "@description": "{i18n>UserID.Description}",
+                "type": {
+                  "ref": [
+                    "managed",
+                    "createdBy"
+                  ]
+                },
+                "length": 255
+              },
+              "status": {
+                "type": "cds.String"
+              },
+              "comment": {
+                "type": "cds.String"
+              }
+            }
+          }
+        }
+      }
+    },
+    "cuid": {
+      "kind": "aspect",
+      "elements": {
+        "ID": {
+          "key": true,
+          "type": "cds.UUID"
+        }
+      }
+    },
+    "managed": {
+      "kind": "aspect",
+      "elements": {
+        "createdAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "createdBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@Core.Immutable": true,
+          "@title": "{i18n>CreatedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        },
+        "modifiedAt": {
+          "@cds.on.insert": {
+            "=": "$now"
+          },
+          "@cds.on.update": {
+            "=": "$now"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedAt}",
+          "@readonly": true,
+          "type": "cds.Timestamp"
+        },
+        "modifiedBy": {
+          "@cds.on.insert": {
+            "=": "$user"
+          },
+          "@cds.on.update": {
+            "=": "$user"
+          },
+          "@UI.HiddenFilter": true,
+          "@UI.ExcludeFromNavigationContext": true,
+          "@title": "{i18n>ChangedBy}",
+          "@readonly": true,
+          "@description": "{i18n>UserID.Description}",
+          "type": "User",
+          "length": 255
+        }
+      }
+    },
+    "temporal": {
+      "kind": "aspect",
+      "elements": {
+        "validFrom": {
+          "@cds.valid.from": true,
+          "type": "cds.Timestamp"
+        },
+        "validTo": {
+          "@cds.valid.to": true,
+          "type": "cds.Timestamp"
+        }
+      }
+    },
+    "User": {
+      "kind": "type",
+      "@title": "{i18n>UserID}",
+      "@description": "{i18n>UserID.Description}",
+      "type": "cds.String",
+      "length": 255
+    },
+    "sap.common.Languages.texts": {
+      "kind": "entity",
+      "@odata.draft.enabled": false,
+      "includes": [
+        "sap.common.TextsAspect"
+      ],
+      "elements": {
+        "locale": {
+          "@title": "{i18n>LanguageCode}",
+          "key": true,
+          "type": "sap.common.Locale",
+          "length": 14
+        },
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@odata.containment.ignore": true,
+          "@Common.Text": {
+            "=": "name"
+          },
+          "@title": "{i18n>LanguageCode}",
+          "key": true,
+          "type": "sap.common.Locale",
+          "length": 14
+        }
+      }
+    },
+    "sap.common.Countries.texts": {
+      "kind": "entity",
+      "@odata.draft.enabled": false,
+      "includes": [
+        "sap.common.TextsAspect"
+      ],
+      "elements": {
+        "locale": {
+          "@title": "{i18n>LanguageCode}",
+          "key": true,
+          "type": "sap.common.Locale",
+          "length": 14
+        },
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@odata.containment.ignore": true,
+          "@title": "{i18n>CountryCode}",
+          "@Common.Text": {
+            "=": "name"
+          },
+          "key": true,
+          "type": "cds.String",
+          "length": 3
+        }
+      }
+    },
+    "sap.common.Currencies.texts": {
+      "kind": "entity",
+      "@odata.draft.enabled": false,
+      "includes": [
+        "sap.common.TextsAspect"
+      ],
+      "elements": {
+        "locale": {
+          "@title": "{i18n>LanguageCode}",
+          "key": true,
+          "type": "sap.common.Locale",
+          "length": 14
+        },
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@odata.containment.ignore": true,
+          "@title": "{i18n>CurrencyCode}",
+          "@Common.Text": {
+            "=": "name"
+          },
+          "key": true,
+          "type": "cds.String",
+          "length": 3
+        }
+      }
+    },
+    "sap.common.Timezones.texts": {
+      "kind": "entity",
+      "@odata.draft.enabled": false,
+      "includes": [
+        "sap.common.TextsAspect"
+      ],
+      "elements": {
+        "locale": {
+          "@title": "{i18n>LanguageCode}",
+          "key": true,
+          "type": "sap.common.Locale",
+          "length": 14
+        },
+        "name": {
+          "@title": "{i18n>Name}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 255
+        },
+        "descr": {
+          "@title": "{i18n>Description}",
+          "localized": null,
+          "type": "cds.String",
+          "length": 1000
+        },
+        "code": {
+          "@odata.containment.ignore": true,
+          "@title": "{i18n>TimeZoneCode}",
+          "key": true,
+          "type": "cds.String",
+          "length": 100
+        }
+      }
+    }
+  },
+  "meta": {
+    "creator": "CDS Compiler v6.9.2",
+    "compilerVersion": "6.9.2",
+    "compilerCsnFlavor": "inferred",
+    "flavor": "inferred"
+  },
+  "$version": "2.0"
+}

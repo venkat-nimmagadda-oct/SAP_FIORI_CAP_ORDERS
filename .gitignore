@@ -1,0 +1,56 @@
+node_modules/
+target/
+_out/
+gen/
+
+.cdsrc-private.json
+default-*.json
+*.sqlite
+# MTA
+mta_archives/
+*_mta_build_tmp
+*.mtar
+# Other
+.DS_Store
+# @cap-js/cds-typer
+@cds-models
+# Local backups
+backup/
+backups/
+backup-*/
+backups-*/
+mta-op-*/
+*.backup
+*.backup-*
+*.bak
+*.old
+*.broken*
+*~
+# Generated CAP, UI5, and MTA output
+**/node_modules/
+resources/
+*_mta_build_tmp/
+.*_mta_build_tmp/
+app/*/dist/
+# Local environment and credentials
+.env
+.env.*
+default-env.json
+*service-key*.json
+*servicekey*.json
+*credentials*.json
+*.pem
+*.key
+*.p12
+*.pfx
+# Logs and test output
+*.log
+coverage/
+test-results/
+# IDE and operating-system files
+Thumbs.db
+.idea/
+.vscode/settings.json
+
+# Standalone PostgreSQL connector POC, retained locally only
+postgres-poc/

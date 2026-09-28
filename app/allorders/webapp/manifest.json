@@ -1,0 +1,215 @@
+{
+  "_version": "1.85.0",
+  "sap.app": {
+    "id": "orders.portal.allorders",
+    "type": "application",
+    "i18n": {
+      "bundleUrl": "i18n/i18n.properties",
+      "supportedLocales": [
+        "en"
+      ],
+      "fallbackLocale": "en"
+    },
+    "applicationVersion": {
+      "version": "0.1.7"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:lrop",
+      "version": "1.26.0",
+      "toolsId": "2cd73e51-2f20-4a91-9249-e3999c151cbd"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/supplier-order/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "PurchaseOrder-display": {
+          "semanticObject": "PurchaseOrder",
+          "action": "display",
+          "title": "{{PurchaseOrder-display.flpTitle}}",
+          "subTitle": "{{PurchaseOrder-display.flpSubtitle}}",
+          "info": "{{PurchaseOrder-display.flpInfo}}",
+          "icon": "sap-icon://activity-items",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "orders.portal"
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.149.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "orders.portal.allorders.i18n.i18n",
+          "supportedLocales": [
+            "en"
+          ],
+          "fallbackLocale": "en"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties",
+        "settings": {
+          "supportedLocales": [
+            "en"
+          ],
+          "fallbackLocale": "en"
+        }
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {
+        "async": true
+      },
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "OrderHistoryList",
+          "target": "OrderHistoryList"
+        },
+        {
+          "pattern": "OrderHistory({key}):?query:",
+          "name": "OrderHistoryObjectPage",
+          "target": "OrderHistoryObjectPage"
+        }
+      ],
+      "targets": {
+        "OrderHistoryList": {
+          "type": "Component",
+          "id": "OrderHistoryList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/OrderHistory",
+              "variantManagement": "Page",
+              "navigation": {
+                "OrderHistory": {
+                  "detail": {
+                    "route": "OrderHistoryObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable",
+                    "selectionMode": "Multi",
+                    "selectAll": true
+                  },
+                  "actions": {
+                    "exportToExcel": {
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "SavePortalView": {
+                      "text": "Save View",
+                      "press": "orders.portal.allorders.ext.controller.SavedViews.saveView",
+                      "requiresSelection": false
+                    },
+                    "ApplyPortalView": {
+                      "text": "Apply View",
+                      "press": "orders.portal.allorders.ext.controller.SavedViews.applyView",
+                      "requiresSelection": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "OrderHistoryObjectPage": {
+          "type": "Component",
+          "id": "OrderHistoryObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/OrderHistory",
+              "content": {
+                "header": {
+                  "actions": {
+                    "BackToAllOrders": {
+                      "text": "Back",
+                      "icon": "sap-icon://nav-back",
+                      "press": "orders.portal.allorders.ext.controller.ObjectPageActions.onBack",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  },
+  "sap.fe": {
+    "app": {
+      "enableLazyLoading": true
+    }
+  }
+}

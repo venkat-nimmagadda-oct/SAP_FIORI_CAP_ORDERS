@@ -1,0 +1,28 @@
+{
+  "generationParameters": {
+    "generationDate": "Mon Jun 15 2026 04:27:50 GMT+0000 (Coordinated Universal Time)",
+    "generatorPlatform": "SAP Business Application Studio",
+    "serviceType": "Local CAP",
+    "metadataFilename": "",
+    "serviceUrl": "http://localhost:4004/odata/v4/supplier-order/",
+    "appName": "failedorders",
+    "appTitle": "Failed Orders",
+    "appDescription": "Failed Purchase Orders - Reprocess/Cancel",
+    "appNamespace": "orders.portal",
+    "ui5Theme": "sap_horizon",
+    "ui5Version": "1.149.0",
+    "enableEslint": true,
+    "enableTypeScript": false,
+    "showMockDataInfo": false,
+    "generatorVersion": "1.26.0",
+    "template": "List Report Page V4",
+    "generatorName": "SAP Fiori Application Generator",
+    "entityRelatedConfig": [
+      {
+        "type": "Main Entity",
+        "value": "SupplierOrdersReprocess"
+      }
+    ],
+    "launchText": "To launch the generated app, start your CAP project:  and navigate to the following location in your browser:\n\nhttp://localhost:4004/failedorders/webapp/index.html"
+  }
+}

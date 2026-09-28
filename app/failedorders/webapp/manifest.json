@@ -1,0 +1,220 @@
+{
+  "_version": "1.85.0",
+  "sap.app": {
+    "id": "orders.portal.failedorders",
+    "type": "application",
+    "i18n": "i18n/i18n.properties",
+    "applicationVersion": {
+      "version": "0.0.24"
+    },
+    "title": "{{appTitle}}",
+    "description": "{{appDescription}}",
+    "resources": "resources.json",
+    "sourceTemplate": {
+      "id": "@sap/generator-fiori:lrop",
+      "version": "1.26.0",
+      "toolsId": "6e341d50-b239-49b9-9047-8ffa3bce06e2"
+    },
+    "dataSources": {
+      "mainService": {
+        "uri": "/odata/v4/supplier-order/",
+        "type": "OData",
+        "settings": {
+          "annotations": [],
+          "odataVersion": "4.0"
+        }
+      }
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "FailedOrder-manage": {
+          "semanticObject": "FailedOrder",
+          "action": "manage",
+          "title": "{{FailedOrder-manage.flpTitle}}",
+          "subTitle": "{{FailedOrder-manage.flpSubtitle}}",
+          "info": "{{FailedOrder-manage.flpInfo}}",
+          "icon": "sap-icon://alert",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "orders.portal"
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "icons": {
+      "icon": "",
+      "favIcon": "",
+      "phone": "",
+      "phone@2": "",
+      "tablet": "",
+      "tablet@2": ""
+    },
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "flexEnabled": true,
+    "dependencies": {
+      "minUI5Version": "1.149.0",
+      "libs": {
+        "sap.m": {},
+        "sap.ui.core": {},
+        "sap.fe.templates": {}
+      }
+    },
+    "contentDensities": {
+      "compact": true,
+      "cozy": true
+    },
+    "models": {
+      "i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "settings": {
+          "bundleName": "orders.portal.failedorders.i18n.i18n"
+        }
+      },
+      "": {
+        "dataSource": "mainService",
+        "preload": true,
+        "settings": {
+          "operationMode": "Server",
+          "autoExpandSelect": true,
+          "earlyRequests": true
+        }
+      },
+      "@i18n": {
+        "type": "sap.ui.model.resource.ResourceModel",
+        "uri": "i18n/i18n.properties"
+      }
+    },
+    "resources": {
+      "css": []
+    },
+    "routing": {
+      "config": {},
+      "routes": [
+        {
+          "pattern": ":?query:",
+          "name": "SupplierOrdersReprocessList",
+          "target": "SupplierOrdersReprocessList"
+        },
+        {
+          "pattern": "SupplierOrdersReprocess({key}):?query:",
+          "name": "SupplierOrdersReprocessObjectPage",
+          "target": "SupplierOrdersReprocessObjectPage"
+        }
+      ],
+      "targets": {
+        "SupplierOrdersReprocessList": {
+          "type": "Component",
+          "id": "SupplierOrdersReprocessList",
+          "name": "sap.fe.templates.ListReport",
+          "options": {
+            "settings": {
+              "contextPath": "/SupplierOrdersReprocess",
+              "variantManagement": "Page",
+              "initialLoad": true,
+              "navigation": {
+                "SupplierOrdersReprocess": {
+                  "detail": {
+                    "route": "SupplierOrdersReprocessObjectPage"
+                  }
+                }
+              },
+              "controlConfiguration": {
+                "@com.sap.vocabularies.UI.v1.LineItem": {
+                  "tableSettings": {
+                    "type": "GridTable"
+                  },
+                  "actions": {
+                    "ResendFromList": {
+                      "text": "Resend",
+                      "press": "orders.portal.failedorders.ext.controller.ListReportActions.onResend",
+                      "requiresSelection": true,
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "CancelMessageFromList": {
+                      "text": "Cancel Message",
+                      "press": "orders.portal.failedorders.ext.controller.ListReportActions.onCancelMessage",
+                      "requiresSelection": true,
+                      "visible": true,
+                      "enabled": true
+                    },
+                    "SavePortalView": {
+                      "text": "Save View",
+                      "press": "orders.portal.failedorders.ext.controller.SavedViews.saveView",
+                      "requiresSelection": false
+                    },
+                    "ApplyPortalView": {
+                      "text": "Apply View",
+                      "press": "orders.portal.failedorders.ext.controller.SavedViews.applyView",
+                      "requiresSelection": false
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "SupplierOrdersReprocessObjectPage": {
+          "type": "Component",
+          "id": "SupplierOrdersReprocessObjectPage",
+          "name": "sap.fe.templates.ObjectPage",
+          "options": {
+            "settings": {
+              "editableHeaderContent": false,
+              "contextPath": "/SupplierOrdersReprocess",
+              "content": {
+                "header": {
+                  "actions": {
+                    "ResendFromDetails": {
+                      "press": "orders.portal.failedorders.ext.controller.FailedOrderDetailActions.onResend",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "Resend"
+                    },
+                    "CancelMessageFromDetails": {
+                      "press": "orders.portal.failedorders.ext.controller.FailedOrderDetailActions.onCancelMessage",
+                      "visible": true,
+                      "enabled": true,
+                      "requiresSelection": false,
+                      "text": "Cancel Message"
+                    },
+                    "BackToFailedOrders": {
+                      "text": "Back",
+                      "icon": "sap-icon://nav-back",
+                      "press": "orders.portal.failedorders.ext.controller.ObjectPageActions.onBack",
+                      "visible": true,
+                      "enabled": true
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "sap.fiori": {
+    "registrationIds": [],
+    "archeType": "transactional"
+  },
+  "sap.fe": {
+    "app": {
+      "enableLazyLoading": true
+    }
+  }
+}

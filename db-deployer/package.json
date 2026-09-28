@@ -1,0 +1,23 @@
+{
+  "name": "orders-portal-db-deployer",
+  "version": "1.0.0",
+  "description": "One-time PostgreSQL schema deployer for orders-portal",
+  "main": "server.js",
+  "private": true,
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@cap-js/postgres": "^2",
+    "@octanner/cap-postgres-onprem-connector": "file:../../cap-postgres-onprem-connector/octanner-cap-postgres-onprem-connector-1.0.1.tgz",
+    "@sap/cds": "^9",
+    "@sap/cds-dk": "^9",
+    "@sap/xsenv": "^6.2.1",
+    "axios": "^1.11.0",
+    "pg": "^8.16.3",
+    "socks": "^2.8.9"
+  }
+}

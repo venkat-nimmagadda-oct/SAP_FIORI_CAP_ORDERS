@@ -1,0 +1,342 @@
+{
+  "xsappname": "orders-portal",
+  "tenant-mode": "dedicated",
+  "description": "Security configuration for OC Tanner Order Portal",
+
+  "scopes": [
+    {
+      "name": "$XSAPPNAME.Viewer",
+      "description": "View orders filtered by authorized Sales Org"
+    },
+    {
+      "name": "$XSAPPNAME.Admin",
+      "description": "Full administrative access including Resend and Cancel actions"
+    },
+    {
+      "name": "$XSAPPNAME.CPIInserter",
+      "description": "Technical role for CPI to insert failed records"
+    }
+  ],
+
+  "attributes": [
+    {
+      "name": "SalesOrg",
+      "description": "Sales Organization filter",
+      "valueType": "string"
+    },
+    {
+      "name": "Country",
+      "description": "Country code filter",
+      "valueType": "string"
+    }
+  ],
+
+  "role-templates": [
+    {
+      "name": "Viewer_US",
+      "description": "US Buyer read-only access for Sales Org 1000",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "1000"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_US_Intl",
+      "description": "US International Buyer read-only access for Sales Org 6",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "6"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_CA",
+      "description": "Canada Buyer read-only access for Sales Org 3000",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "3000"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_UK",
+      "description": "UK Buyer read-only access for Sales Org 1010",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "1010"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_DE",
+      "description": "Germany Buyer read-only access for Sales Org 49",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "49"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_MX",
+      "description": "Mexico Buyer read-only access for Sales Org 52",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "52"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_AU",
+      "description": "Australia Buyer read-only access for Sales Org 61",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "61"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_SG",
+      "description": "Singapore Buyer read-only access for Sales Org 65",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "65"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_JP",
+      "description": "Japan Buyer read-only access for Sales Org 81",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "81"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_HK",
+      "description": "Hong Kong Buyer read-only access for Sales Org 852",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "852"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_CN",
+      "description": "China Buyer read-only access for Sales Org 86",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "86"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Viewer_IN",
+      "description": "India Buyer read-only access for Sales Org 91",
+      "scope-references": [
+        "$XSAPPNAME.Viewer"
+      ],
+      "attribute-references": [
+        {
+          "name": "SalesOrg",
+          "default-values": [
+            "91"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Admin",
+      "description": "Full administrative access",
+      "scope-references": [
+        "$XSAPPNAME.Viewer",
+        "$XSAPPNAME.Admin"
+      ]
+    },
+    {
+      "name": "CPIInserter",
+      "description": "Technical role for CPI",
+      "scope-references": [
+        "$XSAPPNAME.CPIInserter"
+      ]
+    }
+  ],
+
+  "role-collections": [
+    {
+      "name": "OrderPortal_Admin",
+      "description": "Full admin access — Casey and support team",
+      "role-template-references": [
+        "$XSAPPNAME.Admin"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_US",
+      "description": "US Buyer — OC Tanner Recognition Co (Sales Org 1000)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_US"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_US_Intl",
+      "description": "US International Buyer — OC Tanner International (Sales Org 6)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_US_Intl"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_CA",
+      "description": "Canada Buyer — OC Tanner Mfg Limited (Sales Org 3000)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_CA"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_UK",
+      "description": "UK Buyer — OC Tanner Europe (Sales Org 1010)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_UK"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_DE",
+      "description": "Germany Buyer — O.C. Tanner GmbH (Sales Org 49)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_DE"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_MX",
+      "description": "Mexico Buyer — OC Tanner Mexico Ltd (Sales Org 52)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_MX"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_AU",
+      "description": "Australia Buyer — OC Tanner Australia (Sales Org 61)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_AU"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_SG",
+      "description": "Singapore Buyer — OC Tanner Singapore Ltd (Sales Org 65)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_SG"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_JP",
+      "description": "Japan Buyer — OC Tanner Japan Ltd (Sales Org 81)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_JP"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_HK",
+      "description": "Hong Kong Buyer — OC Tanner Hong Kong Ltd (Sales Org 852)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_HK"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_CN",
+      "description": "China Buyer — OC Tanner Trading (Sales Org 86)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_CN"
+      ]
+    },
+    {
+      "name": "OrderPortal_Buyer_IN",
+      "description": "India Buyer — OC Tanner India PVT Ltd (Sales Org 91)",
+      "role-template-references": [
+        "$XSAPPNAME.Viewer_IN"
+      ]
+    },
+    {
+      "name": "OrderPortal_CPI",
+      "description": "Technical role collection for CPI client credentials",
+      "role-template-references": [
+        "$XSAPPNAME.CPIInserter"
+      ]
+    }
+  ],
+
+  "oauth2-configuration": {
+    "redirect-uris": [
+      "https://*.cfapps.us10.hana.ondemand.com/**",
+      "http://localhost:4004/**",
+      "http://localhost:5000/**"
+    ],
+    "token-validity": 3600,
+    "refresh-token-validity": 86400
+  }
+}
