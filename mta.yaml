@@ -166,7 +166,7 @@ resources:
           redirect-uris:
             - https://*~{app-api/app-uri}/**
         tenant-mode: dedicated
-        xsappname: orders-portal-${org}-${space}
+        xsappname: orders-portal
       path: ./xs-security.json
       service: xsuaa
       service-plan: application

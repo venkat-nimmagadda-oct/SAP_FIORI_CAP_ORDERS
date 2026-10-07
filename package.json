@@ -5,7 +5,7 @@
   "private": true,
   "dependencies": {
     "@cap-js/postgres": "^2",
-    "@octanner/cap-postgres-onprem-connector": "file:./libs/octanner-cap-postgres-onprem-connector-1.0.1.tgz",
+    "@octanner/cap-postgres-onprem-connector": "file:libs/octanner-cap-postgres-onprem-connector-1.0.2.tgz",
     "@sap-cloud-sdk/connectivity": "^4.8.0",
     "@sap-cloud-sdk/http-client": "^4.8.0",
     "@sap/cds": "^9",
