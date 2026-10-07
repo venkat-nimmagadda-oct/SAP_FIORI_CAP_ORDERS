@@ -982,23 +982,6 @@ module.exports = cds.service.impl(async function () {
         userId,
         now
     ) {
-        const existing = await SELECT.one
-            .from(SupplierOrdersReprocess)
-            .where({ supplierReferenceNumber });
-
-        if (!existing) {
-            return false;
-        }
-
-        const isLocked =
-            existing.isProcessing === true &&
-            existing.lockExpiresAt &&
-            new Date(existing.lockExpiresAt) > now;
-
-        if (isLocked) {
-            return false;
-        }
-
         const lockExpiresAt = new Date(
             now.getTime() +
             LOCK_EXPIRY_MINUTES * 60 * 1000
@@ -1006,6 +989,12 @@ module.exports = cds.service.impl(async function () {
 
         const updatedRows = await UPDATE(SupplierOrdersReprocess)
             .where({ supplierReferenceNumber })
+            .and`(
+                isProcessing = false or
+                isProcessing is null or
+                lockExpiresAt is null or
+                lockExpiresAt <= ${now}
+            )`
             .set({
                 isProcessing: true,
                 lockedBy: userId,
