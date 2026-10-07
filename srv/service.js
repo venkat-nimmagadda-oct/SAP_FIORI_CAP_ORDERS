@@ -3,21 +3,42 @@ const { executeHttpRequest } = require('@sap-cloud-sdk/http-client');
 
 const LOG = cds.log('orders');
 const TILE_QUERY_TIMEOUT_MS = 15000;
-const LOCK_EXPIRY_MINUTES = Number(process.env.RESEND_LOCK_EXPIRY_MINUTES || 11);
+const LOCK_EXPIRY_MINUTES = Number(
+    process.env.RESEND_LOCK_EXPIRY_MINUTES || 11
+);
 const EXCEL_EXPORT_MAX_DAYS = 30;
 const MAX_EXPORT_RECORDS = 65000;
-const CPI_RESEND_DESTINATION = process.env.CPI_RESEND_DESTINATION || 'Portal_IS_DEV';
-const CPI_RESEND_PATH = process.env.CPI_RESEND_PATH || '/http/IF_Portal_JMS_PurchaseOrderCreate_Resend';
-const CPI_RESEND_TIMEOUT_MS = Number(process.env.CPI_RESEND_TIMEOUT_MS || 30000);
-const CPI_RESEND_PAYLOAD_MODE = process.env.CPI_RESEND_PAYLOAD_MODE || 'raw';
-const PORTAL_SOURCE_SYSTEM = process.env.PORTAL_SOURCE_SYSTEM || 'ORDER_PORTAL';
+
+const CPI_RESEND_DESTINATION =
+    process.env.CPI_RESEND_DESTINATION || 'Portal_IS_DEV';
+
+const CPI_RESEND_PATH =
+    process.env.CPI_RESEND_PATH ||
+    '/http/IF_Portal_JMS_PurchaseOrderCreate_Resend';
+
+const CPI_RESEND_TIMEOUT_MS = Number(
+    process.env.CPI_RESEND_TIMEOUT_MS || 30000
+);
+
+const CPI_RESEND_PAYLOAD_MODE =
+    process.env.CPI_RESEND_PAYLOAD_MODE || 'raw';
+
+const PORTAL_SOURCE_SYSTEM =
+    process.env.PORTAL_SOURCE_SYSTEM || 'ORDER_PORTAL';
+
 const FAILED_ORDER_STATUSES = [1, 2];
 
-async function queryWithTimeout(queryPromise, timeoutMs = TILE_QUERY_TIMEOUT_MS) {
+async function queryWithTimeout(
+    queryPromise,
+    timeoutMs = TILE_QUERY_TIMEOUT_MS
+) {
     return Promise.race([
         queryPromise,
         new Promise((_, reject) =>
-            setTimeout(() => reject(new Error(`Query timeout after ${timeoutMs}ms`)), timeoutMs)
+            setTimeout(
+                () => reject(new Error(`Query timeout after ${timeoutMs}ms`)),
+                timeoutMs
+            )
         )
     ]);
 }
@@ -39,7 +60,10 @@ module.exports = cds.service.impl(async function () {
         const requestTime = new Date();
 
         if (!supplierReferenceNumber) {
-            return req.reject(400, 'Supplier Reference Number is required');
+            return req.reject(
+                400,
+                'Supplier Reference Number is required'
+            );
         }
 
         LOG.info(
@@ -51,7 +75,9 @@ module.exports = cds.service.impl(async function () {
             .from(SupplierOrdersReprocess)
             .where({ supplierReferenceNumber });
 
-        if (!order) return req.reject(404, 'Order not found');
+        if (!order) {
+            return req.reject(404, 'Order not found');
+        }
 
         validateOrderSalesOrgAccess(req, order, 'RESEND');
 
@@ -71,15 +97,22 @@ module.exports = cds.service.impl(async function () {
         }
 
         let payload;
+
         try {
             payload = JSON.parse(order.rawData);
         } catch (error) {
             await releaseLock(supplierReferenceNumber);
-            return req.reject(400, `Invalid rawData JSON: ${error.message}`);
+
+            return req.reject(
+                400,
+                `Invalid rawData JSON: ${error.message}`
+            );
         }
 
         // One business-user click equals exactly one portal Resend attempt.
-        const portalResendCount = Number(order.reprocessCounter || 0) + 1;
+        const portalResendCount =
+            Number(order.reprocessCounter || 0) + 1;
+
         const portalResendAt = new Date();
 
         try {
@@ -124,8 +157,8 @@ module.exports = cds.service.impl(async function () {
                 `correlationId=${cpiResponse.correlationId}`
             );
 
-            // Do not write OrderHistory here. HTTP 202 means CPI accepted
-            // the asynchronous request. CPI owns final status 0 or 2.
+            // HTTP 202 means CPI accepted the asynchronous request.
+            // CPI owns the final completed or failed status.
             await INSERT.into(AuditLog).entries({
                 ID: cds.utils.uuid(),
                 action: 'RESEND',
@@ -144,8 +177,8 @@ module.exports = cds.service.impl(async function () {
                 performedBy: userId
             });
 
-            // Keep the database row so asynchronous CPI success/failure SQL
-            // can update it. Release only the portal-owned lock.
+            // Keep the row so asynchronous CPI processing can update it.
+            // Release only the portal-owned lock.
             const unlockedRows = await UPDATE(SupplierOrdersReprocess)
                 .where({
                     supplierReferenceNumber,
@@ -169,7 +202,9 @@ module.exports = cds.service.impl(async function () {
 
             return {
                 success: true,
-                message: `Order ${order.purchaseOrderNumber} submitted to CPI successfully`
+                message:
+                    `Order ${order.purchaseOrderNumber}/` +
+                    `${order.poLineNumber} submitted to CPI successfully`
             };
         } catch (error) {
             const errorMessage = normalizeErrorMessage(error);
@@ -203,9 +238,11 @@ module.exports = cds.service.impl(async function () {
             });
 
             LOG.error(
-                `[RESEND] failed, supplierReferenceNumber=${supplierReferenceNumber}, ` +
+                `[RESEND] failed, ` +
+                `supplierReferenceNumber=${supplierReferenceNumber}, ` +
                 `po=${order.purchaseOrderNumber}, ` +
-                `portalResendCount=${portalResendCount}, error=${errorMessage}`
+                `portalResendCount=${portalResendCount}, ` +
+                `error=${errorMessage}`
             );
 
             return {
@@ -224,18 +261,33 @@ module.exports = cds.service.impl(async function () {
         const now = new Date();
 
         if (!supplierReferenceNumber) {
-            return req.reject(400, 'Supplier Reference Number is required');
+            return req.reject(
+                400,
+                'Supplier Reference Number is required'
+            );
         }
+
+        LOG.info(
+            `[CANCEL] requestedBy=${userId}, ` +
+            `supplierReferenceNumber=${supplierReferenceNumber}`
+        );
 
         const order = await SELECT.one
             .from(SupplierOrdersReprocess)
             .where({ supplierReferenceNumber });
 
-        if (!order) return req.reject(404, 'Order not found');
+        if (!order) {
+            return req.reject(404, 'Order not found');
+        }
 
         validateOrderSalesOrgAccess(req, order, 'CANCEL');
 
-        const lockAcquired = await acquireLock(supplierReferenceNumber, userId, now);
+        const lockAcquired = await acquireLock(
+            supplierReferenceNumber,
+            userId,
+            now
+        );
+
         if (!lockAcquired) {
             return handleBlocked(
                 req,
@@ -246,8 +298,16 @@ module.exports = cds.service.impl(async function () {
         }
 
         try {
-            // Cancel is a final business outcome, so portal history is valid here.
-            await archiveToHistory(order, 'PORTAL_CANCEL', userId, now, 3, userId);
+            // OrderHistory uses its own database-generated ID.
+            // Do not copy the SupplierOrdersReprocess technical ID.
+            await archiveToHistory(
+                order,
+                'PORTAL_CANCEL',
+                userId,
+                now,
+                3,
+                userId
+            );
 
             await INSERT.into(AuditLog).entries({
                 ID: cds.utils.uuid(),
@@ -263,32 +323,92 @@ module.exports = cds.service.impl(async function () {
                 performedBy: userId
             });
 
-            await DELETE.from(SupplierOrdersReprocess)
+            const deletedRows = await DELETE
+                .from(SupplierOrdersReprocess)
                 .where({ supplierReferenceNumber });
+
+            if (!deletedRows) {
+                throw Object.assign(
+                    new Error(
+                        'Failed Orders record was not deleted after cancellation'
+                    ),
+                    { code: 'CANCEL_DELETE_FAILED' }
+                );
+            }
+
+            LOG.info(
+                `[CANCEL] completed successfully, ` +
+                `supplierReferenceNumber=${supplierReferenceNumber}, ` +
+                `po=${order.purchaseOrderNumber}, ` +
+                `line=${order.poLineNumber}, ` +
+                `cancelledBy=${userId}`
+            );
 
             return {
                 success: true,
-                message: `Order ${order.purchaseOrderNumber} cancelled successfully`
+                message:
+                    `Order ${order.purchaseOrderNumber}/` +
+                    `${order.poLineNumber} cancelled successfully`
             };
         } catch (error) {
-            await releaseLock(supplierReferenceNumber);
-
-            await INSERT.into(AuditLog).entries({
-                ID: cds.utils.uuid(),
-                action: 'CANCEL',
+            LOG.error('[CANCEL] failed', {
+                supplierReferenceNumber,
+                sourceTechnicalId: order.id,
                 purchaseOrderNumber: order.purchaseOrderNumber,
                 poLineNumber: order.poLineNumber,
-                supplier: order.supplier,
-                salesOrg: order.salesOrg,
-                status: 'FAILED',
-                message: `Cancel failed: ${error.message}`,
-                performedBy: userId
+                message: error.message,
+                code: error.code,
+                detail: error.detail,
+                table: error.table,
+                column: error.column,
+                constraint: error.constraint,
+                stack: error.stack
             });
 
-            return {
-                success: false,
-                message: `Cancel failed: ${error.message}`
-            };
+            /*
+             * Do not run releaseLock() or another database INSERT here.
+             *
+             * A PostgreSQL error may already have aborted the request
+             * transaction. CAP will roll back this request, including the
+             * previously acquired lock, when req.reject() throws.
+             */
+
+            if (error.code === '23502') {
+                return req.reject(
+                    422,
+                    `Order ${order.purchaseOrderNumber}/` +
+                    `${order.poLineNumber} could not be cancelled because ` +
+                    `required order information is missing. ` +
+                    `The order remains in Failed Orders.`
+                );
+            }
+
+            if (error.code === '23505') {
+                return req.reject(
+                    409,
+                    `Order ${order.purchaseOrderNumber}/` +
+                    `${order.poLineNumber} could not be cancelled because ` +
+                    `a conflicting history record exists. ` +
+                    `The order remains in Failed Orders.`
+                );
+            }
+
+            if (error.code === 'CANCEL_DELETE_FAILED') {
+                return req.reject(
+                    409,
+                    `Order ${order.purchaseOrderNumber}/` +
+                    `${order.poLineNumber} could not be removed from ` +
+                    `Failed Orders. Refresh the page and retry.`
+                );
+            }
+
+            return req.reject(
+                500,
+                `Order ${order.purchaseOrderNumber}/` +
+                `${order.poLineNumber} could not be cancelled. ` +
+                `The order remains in Failed Orders. ` +
+                `Please retry or contact support.`
+            );
         }
     });
 
@@ -310,15 +430,20 @@ module.exports = cds.service.impl(async function () {
             req.req?.headers?.accept?.includes('spreadsheet') ||
             req.req?.query?.$format === 'xlsx';
 
-        if (!isExport) return;
+        if (!isExport) {
+            return;
+        }
 
         const whereClause = req.query.SELECT?.where || [];
-        const hasDateFilter = JSON.stringify(whereClause).includes('purchaseOrderDate');
+
+        const hasDateFilter =
+            JSON.stringify(whereClause).includes('purchaseOrderDate');
 
         if (!hasDateFilter) {
             return req.reject(
                 400,
-                `Excel export requires an Order Date range up to ${EXCEL_EXPORT_MAX_DAYS} days.`
+                `Excel export requires an Order Date range up to ` +
+                `${EXCEL_EXPORT_MAX_DAYS} days.`
             );
         }
 
@@ -331,12 +456,16 @@ module.exports = cds.service.impl(async function () {
             if (result?.total > MAX_EXPORT_RECORDS) {
                 return req.reject(
                     400,
-                    `Export limited to ${MAX_EXPORT_RECORDS.toLocaleString()} records. ` +
-                    `Current selection returns ${result.total.toLocaleString()} records.`
+                    `Export limited to ` +
+                    `${MAX_EXPORT_RECORDS.toLocaleString()} records. ` +
+                    `Current selection returns ` +
+                    `${result.total.toLocaleString()} records.`
                 );
             }
         } catch (error) {
-            LOG.warn(`Could not count export records: ${error.message}`);
+            LOG.warn(
+                `Could not count export records: ${error.message}`
+            );
         }
     });
 
@@ -345,7 +474,10 @@ module.exports = cds.service.impl(async function () {
     // ==================================================
     this.before('READ', UserFilterVariants, (req) => {
         const userId = req.user?.id;
-        if (userId) req.query.where({ userId });
+
+        if (userId) {
+            req.query.where({ userId });
+        }
     });
 
     this.before('CREATE', UserFilterVariants, (req) => {
@@ -354,17 +486,31 @@ module.exports = cds.service.impl(async function () {
 
     this.before('UPDATE', UserFilterVariants, async (req) => {
         const ID = req.data.ID || req.params?.[0]?.ID;
-        const variant = await SELECT.one.from(UserFilterVariants).where({ ID });
+
+        const variant = await SELECT.one
+            .from(UserFilterVariants)
+            .where({ ID });
+
         if (variant && variant.userId !== req.user?.id) {
-            return req.reject(403, 'You can only modify your own filter variants');
+            return req.reject(
+                403,
+                'You can only modify your own filter variants'
+            );
         }
     });
 
     this.before('DELETE', UserFilterVariants, async (req) => {
         const ID = req.params?.[0]?.ID;
-        const variant = await SELECT.one.from(UserFilterVariants).where({ ID });
+
+        const variant = await SELECT.one
+            .from(UserFilterVariants)
+            .where({ ID });
+
         if (variant && variant.userId !== req.user?.id) {
-            return req.reject(403, 'You can only delete your own filter variants');
+            return req.reject(
+                403,
+                'You can only delete your own filter variants'
+            );
         }
     });
 
@@ -377,7 +523,8 @@ module.exports = cds.service.impl(async function () {
         if (!data.supplierReferenceNumber) {
             return req.reject(
                 400,
-                'supplierReferenceNumber is required when inserting through CAP OData'
+                'supplierReferenceNumber is required when inserting ' +
+                'through CAP OData'
             );
         }
 
@@ -385,23 +532,44 @@ module.exports = cds.service.impl(async function () {
             try {
                 JSON.parse(data.rawData);
             } catch (error) {
-                return req.reject(400, `Invalid rawData JSON: ${error.message}`);
+                return req.reject(
+                    400,
+                    `Invalid rawData JSON: ${error.message}`
+                );
             }
         }
 
-        if (data.status === undefined || data.status === null) data.status = 1;
-        if (!data.createdBy) data.createdBy = req.user?.id || 'CPI';
-        if (!data.createdOn) data.createdOn = new Date();
-        if (data.reprocessCounter === undefined || data.reprocessCounter === null) {
+        if (data.status === undefined || data.status === null) {
+            data.status = 1;
+        }
+
+        if (!data.createdBy) {
+            data.createdBy = req.user?.id || 'CPI';
+        }
+
+        if (!data.createdOn) {
+            data.createdOn = new Date();
+        }
+
+        if (
+            data.reprocessCounter === undefined ||
+            data.reprocessCounter === null
+        ) {
             data.reprocessCounter = 0;
         }
-        if (data.isProcessing === undefined) data.isProcessing = false;
 
+        if (data.isProcessing === undefined) {
+            data.isProcessing = false;
+        }
+
+        // SupplierOrdersReprocess.id is generated by PostgreSQL.
         delete data.id;
 
         LOG.info(
-            `[CPI_INSERT] supplierReferenceNumber=${data.supplierReferenceNumber}, ` +
-            `status=${data.status}, portalResendCount=${data.reprocessCounter}, ` +
+            `[CPI_INSERT] ` +
+            `supplierReferenceNumber=${data.supplierReferenceNumber}, ` +
+            `status=${data.status}, ` +
+            `portalResendCount=${data.reprocessCounter}, ` +
             `po=${data.purchaseOrderNumber}`
         );
     });
@@ -411,6 +579,7 @@ module.exports = cds.service.impl(async function () {
     // ==================================================
     this.on('getTileCount', async (req) => {
         const { timeRange, tileType } = req.data;
+
         const timeLabels = {
             '1hour': 'Past Hour',
             '24hours': 'Past 24 Hours',
@@ -429,7 +598,10 @@ module.exports = cds.service.impl(async function () {
             ];
 
             if (!validTileTypes.includes(tileType)) {
-                return req.reject(400, `Unknown tileType: ${tileType}`);
+                return req.reject(
+                    400,
+                    `Unknown tileType: ${tileType}`
+                );
             }
 
             const source =
@@ -437,17 +609,26 @@ module.exports = cds.service.impl(async function () {
                     ? SupplierOrdersReprocess
                     : OrderHistory;
 
-            let query = SELECT.one.from(source).columns('count(*) as count');
+            let query = SELECT.one
+                .from(source)
+                .columns('count(*) as count');
 
             if (tileType === 'failed') {
                 query = addFailedOrderStatusFilter(query);
             }
+
             if (tileType === 'processing') {
                 query = query.where({ isProcessing: true });
                 query = addFailedOrderStatusFilter(query);
             }
-            if (tileType === 'completed') query = query.where({ status: 0 });
-            if (tileType === 'cancelled') query = query.where({ status: 3 });
+
+            if (tileType === 'completed') {
+                query = query.where({ status: 0 });
+            }
+
+            if (tileType === 'cancelled') {
+                query = query.where({ status: 3 });
+            }
 
             query = applySalesOrgFilterToQuery(req, query);
 
@@ -458,16 +639,18 @@ module.exports = cds.service.impl(async function () {
                 return {
                     number: count,
                     numberUnit: 'orders',
-                    info: count === 0
-                        ? 'All Clear'
-                        : count < 10
-                            ? 'Requires Attention'
-                            : 'Urgent Action',
-                    infoState: count === 0
-                        ? 'Positive'
-                        : count < 10
-                            ? 'Critical'
-                            : 'Negative',
+                    info:
+                        count === 0
+                            ? 'All Clear'
+                            : count < 10
+                                ? 'Requires Attention'
+                                : 'Urgent Action',
+                    infoState:
+                        count === 0
+                            ? 'Positive'
+                            : count < 10
+                                ? 'Critical'
+                                : 'Negative',
                     title: 'Failed Orders',
                     subtitle: timeLabels[timeRange] || 'Past 24 Hours'
                 };
@@ -500,10 +683,22 @@ module.exports = cds.service.impl(async function () {
                 ]
             };
 
-            const [info, infoState, title, subtitle] = labels[tileType];
-            return { number: count, numberUnit: 'orders', info, infoState, title, subtitle };
+            const [info, infoState, title, subtitle] =
+                labels[tileType];
+
+            return {
+                number: count,
+                numberUnit: 'orders',
+                info,
+                infoState,
+                title,
+                subtitle
+            };
         } catch (error) {
-            LOG.error(`[TILE] type=${tileType}, error=${error.message}`);
+            LOG.error(
+                `[TILE] type=${tileType}, error=${error.message}`
+            );
+
             return {
                 number: 0,
                 numberUnit: 'orders',
@@ -522,12 +717,17 @@ module.exports = cds.service.impl(async function () {
         return query.where([
             { ref: ['status'] },
             'in',
-            { list: FAILED_ORDER_STATUSES.map((status) => ({ val: status })) }
+            {
+                list: FAILED_ORDER_STATUSES.map(
+                    (status) => ({ val: status })
+                )
+            }
         ]);
     }
 
     function normalizeSalesOrgs(req) {
         const raw = req.user?.attr?.SalesOrg;
+
         return (Array.isArray(raw) ? raw : raw ? [raw] : [])
             .map((value) => String(value).trim())
             .filter(Boolean);
@@ -540,22 +740,37 @@ module.exports = cds.service.impl(async function () {
         const salesOrgs = normalizeSalesOrgs(req);
 
         LOG.info(
-            `[AUTH_CONTEXT] user=${userId}, isViewer=${isViewer}, ` +
-            `isAdmin=${isAdmin}, salesOrgs=${JSON.stringify(salesOrgs)}, ` +
+            `[AUTH_CONTEXT] user=${userId}, ` +
+            `isViewer=${isViewer}, ` +
+            `isAdmin=${isAdmin}, ` +
+            `salesOrgs=${JSON.stringify(salesOrgs)}, ` +
             `entity=${req.target?.name || 'unknown'}`
         );
 
         if (isAdmin) {
             LOG.info(
-                `[READ_FILTER] Admin bypass applied, user=${userId}, ` +
-                `uiWhere=${JSON.stringify(req.query.SELECT?.where || [])}`
+                `[READ_FILTER] Admin bypass applied, ` +
+                `user=${userId}, ` +
+                `uiWhere=${JSON.stringify(
+                    req.query.SELECT?.where || []
+                )}`
             );
+
             return;
         }
 
-        if (!isViewer) return req.reject(403, 'Viewer authorization is not assigned');
+        if (!isViewer) {
+            return req.reject(
+                403,
+                'Viewer authorization is not assigned'
+            );
+        }
+
         if (!salesOrgs.length) {
-            return req.reject(403, 'No Sales Organization authorization is assigned');
+            return req.reject(
+                403,
+                'No Sales Organization authorization is assigned'
+            );
         }
 
         if (salesOrgs.length === 1) {
@@ -564,22 +779,35 @@ module.exports = cds.service.impl(async function () {
             req.query.where([
                 { ref: ['salesOrg'] },
                 'in',
-                { list: salesOrgs.map((value) => ({ val: value })) }
+                {
+                    list: salesOrgs.map(
+                        (value) => ({ val: value })
+                    )
+                }
             ]);
         }
 
         LOG.info(
-            `[READ_FILTER] user=${userId}, salesOrgs=${JSON.stringify(salesOrgs)}, ` +
-            `finalWhere=${JSON.stringify(req.query.SELECT?.where || [])}`
+            `[READ_FILTER] user=${userId}, ` +
+            `salesOrgs=${JSON.stringify(salesOrgs)}, ` +
+            `finalWhere=${JSON.stringify(
+                req.query.SELECT?.where || []
+            )}`
         );
     }
 
     function applySalesOrgFilterToQuery(req, query) {
-        if (req.user?.is?.('Admin') === true) return query;
+        if (req.user?.is?.('Admin') === true) {
+            return query;
+        }
 
         const salesOrgs = normalizeSalesOrgs(req);
+
         if (!salesOrgs.length) {
-            req.reject(403, 'No Sales Organization authorization is assigned');
+            req.reject(
+                403,
+                'No Sales Organization authorization is assigned'
+            );
         }
 
         return salesOrgs.length === 1
@@ -587,33 +815,52 @@ module.exports = cds.service.impl(async function () {
             : query.where([
                 { ref: ['salesOrg'] },
                 'in',
-                { list: salesOrgs.map((value) => ({ val: value })) }
+                {
+                    list: salesOrgs.map(
+                        (value) => ({ val: value })
+                    )
+                }
             ]);
     }
 
     function validateOrderSalesOrgAccess(req, order, action) {
-        if (req.user?.is?.('Admin') === true) return;
+        if (req.user?.is?.('Admin') === true) {
+            return;
+        }
 
         const salesOrgs = normalizeSalesOrgs(req);
         const orderSalesOrg = String(order.salesOrg || '').trim();
 
         if (!salesOrgs.includes(orderSalesOrg)) {
             LOG.warn(
-                `[${action}_AUTH] rejected user=${req.user?.id}, ` +
+                `[${action}_AUTH] rejected ` +
+                `user=${req.user?.id}, ` +
                 `orderSalesOrg=${orderSalesOrg}, ` +
                 `allowed=${JSON.stringify(salesOrgs)}`
             );
-            return req.reject(403, `Not authorized for Sales Org ${orderSalesOrg}`);
+
+            return req.reject(
+                403,
+                `Not authorized for Sales Org ${orderSalesOrg}`
+            );
         }
     }
 
-    function buildCpiPayload(order, originalPayload, userId, portalResendAt) {
-        if (CPI_RESEND_PAYLOAD_MODE !== 'wrapped') return originalPayload;
+    function buildCpiPayload(
+        order,
+        originalPayload,
+        userId,
+        portalResendAt
+    ) {
+        if (CPI_RESEND_PAYLOAD_MODE !== 'wrapped') {
+            return originalPayload;
+        }
 
         return {
             action: 'RESEND',
             source: 'orders-portal',
-            supplierReferenceNumber: order.supplierReferenceNumber,
+            supplierReferenceNumber:
+                order.supplierReferenceNumber,
             technicalId: order.id,
             purchaseOrderNumber: order.purchaseOrderNumber,
             poLineNumber: order.poLineNumber,
@@ -641,20 +888,26 @@ module.exports = cds.service.impl(async function () {
         );
 
         const correlationId =
-            `${PORTAL_SOURCE_SYSTEM}-${order.supplierReferenceNumber}-${Date.now()}`;
+            `${PORTAL_SOURCE_SYSTEM}-` +
+            `${order.supplierReferenceNumber}-` +
+            `${Date.now()}`;
 
         LOG.info(
-            `[CPI_RESEND] destination=${CPI_RESEND_DESTINATION}, ` +
+            `[CPI_RESEND] ` +
+            `destination=${CPI_RESEND_DESTINATION}, ` +
             `supplierReferenceNumber=${order.supplierReferenceNumber}, ` +
             `portalResendCount=${portalResendCount}, ` +
             `portalResendBy=${userId}, ` +
             `portalResendAt=${portalResendAt.toISOString()}, ` +
-            `sourceSystem=${PORTAL_SOURCE_SYSTEM}, correlationId=${correlationId}`
+            `sourceSystem=${PORTAL_SOURCE_SYSTEM}, ` +
+            `correlationId=${correlationId}`
         );
 
         try {
             const response = await executeHttpRequest(
-                { destinationName: CPI_RESEND_DESTINATION },
+                {
+                    destinationName: CPI_RESEND_DESTINATION
+                },
                 {
                     method: 'POST',
                     url: CPI_RESEND_PATH,
@@ -662,20 +915,28 @@ module.exports = cds.service.impl(async function () {
                     headers: {
                         Accept: 'application/json',
                         'Content-Type': 'application/json',
-                        'X-Source-System': String(PORTAL_SOURCE_SYSTEM),
-                        'X-Portal-Resend-Count': String(portalResendCount),
-                        'X-Portal-Resend-By': String(userId),
-                        'X-Portal-Resend-At': portalResendAt.toISOString(),
-                        'X-Correlation-ID': String(correlationId),
-                        'X-Supplier-Reference-Number': String(
-                            order.supplierReferenceNumber
-                        ),
-                        'X-Portal-Technical-ID': String(order.id || ''),
-                        'X-PO-Number': String(order.purchaseOrderNumber || '')
+                        'X-Source-System':
+                            String(PORTAL_SOURCE_SYSTEM),
+                        'X-Portal-Resend-Count':
+                            String(portalResendCount),
+                        'X-Portal-Resend-By':
+                            String(userId),
+                        'X-Portal-Resend-At':
+                            portalResendAt.toISOString(),
+                        'X-Correlation-ID':
+                            String(correlationId),
+                        'X-Supplier-Reference-Number':
+                            String(order.supplierReferenceNumber),
+                        'X-Portal-Technical-ID':
+                            String(order.id || ''),
+                        'X-PO-Number':
+                            String(order.purchaseOrderNumber || '')
                     },
                     timeout: CPI_RESEND_TIMEOUT_MS
                 },
-                { fetchCsrfToken: false }
+                {
+                    fetchCsrfToken: false
+                }
             );
 
             return {
@@ -693,43 +954,47 @@ module.exports = cds.service.impl(async function () {
     }
 
     function normalizeErrorMessage(error) {
-        if (!error) return 'Unknown error';
+        if (!error) {
+            return 'Unknown error';
+        }
 
         if (error.response) {
             const data =
                 typeof error.response.data === 'string'
                     ? error.response.data
                     : JSON.stringify(error.response.data);
+
             return `CPI HTTP ${error.response.status}: ${data}`;
         }
 
         if (error.code === 'ECONNABORTED') {
-            return `CPI request timed out after ${CPI_RESEND_TIMEOUT_MS}ms`;
+            return (
+                `CPI request timed out after ` +
+                `${CPI_RESEND_TIMEOUT_MS}ms`
+            );
         }
 
         return error.message || String(error);
     }
 
-    async function acquireLock(supplierReferenceNumber, userId, now) {
-        const existing = await SELECT.one
-            .from(SupplierOrdersReprocess)
-            .where({ supplierReferenceNumber });
-
-        if (!existing) return false;
-
-        const isLocked =
-            existing.isProcessing === true &&
-            existing.lockExpiresAt &&
-            new Date(existing.lockExpiresAt) > now;
-
-        if (isLocked) return false;
-
+    async function acquireLock(
+        supplierReferenceNumber,
+        userId,
+        now
+    ) {
         const lockExpiresAt = new Date(
-            now.getTime() + LOCK_EXPIRY_MINUTES * 60 * 1000
+            now.getTime() +
+            LOCK_EXPIRY_MINUTES * 60 * 1000
         );
 
-        await UPDATE(SupplierOrdersReprocess)
+        const updatedRows = await UPDATE(SupplierOrdersReprocess)
             .where({ supplierReferenceNumber })
+            .and`(
+                isProcessing = false or
+                isProcessing is null or
+                lockExpiresAt is null or
+                lockExpiresAt <= ${now}
+            )`
             .set({
                 isProcessing: true,
                 lockedBy: userId,
@@ -737,7 +1002,7 @@ module.exports = cds.service.impl(async function () {
                 lockExpiresAt
             });
 
-        return true;
+        return Number(updatedRows) > 0;
     }
 
     async function releaseLock(supplierReferenceNumber) {
@@ -752,13 +1017,19 @@ module.exports = cds.service.impl(async function () {
                 });
         } catch (error) {
             LOG.error(
-                `[LOCK] release failed supplierReferenceNumber=${supplierReferenceNumber}, ` +
+                `[LOCK] release failed ` +
+                `supplierReferenceNumber=${supplierReferenceNumber}, ` +
                 `error=${error.message}`
             );
         }
     }
 
-    async function handleBlocked(req, supplierReferenceNumber, userId, actionName) {
+    async function handleBlocked(
+        req,
+        supplierReferenceNumber,
+        userId,
+        actionName
+    ) {
         const locked = await SELECT.one
             .from(SupplierOrdersReprocess)
             .columns(
@@ -771,33 +1042,50 @@ module.exports = cds.service.impl(async function () {
             )
             .where({ supplierReferenceNumber });
 
-        if (!locked) return req.reject(404, 'Order not found');
+        if (!locked) {
+            return req.reject(404, 'Order not found');
+        }
 
         await INSERT.into(AuditLog).entries({
             ID: cds.utils.uuid(),
             action: actionName,
-            purchaseOrderNumber: locked.purchaseOrderNumber || 'N/A',
+            purchaseOrderNumber:
+                locked.purchaseOrderNumber || 'N/A',
             poLineNumber: locked.poLineNumber || 'N/A',
             supplier: locked.supplier || 'N/A',
             salesOrg: locked.salesOrg,
             status: 'BLOCKED',
-            message: `Action blocked; locked by ${locked.lockedBy || 'another user'}`,
+            message:
+                `Action blocked; locked by ` +
+                `${locked.lockedBy || 'another user'}`,
             performedBy: userId
         });
 
         return req.reject(
             409,
-            `This order is being processed by ${locked.lockedBy || 'another user'}`
+            `This order is being processed by ` +
+            `${locked.lockedBy || 'another user'}`
         );
     }
 
-    async function archiveToHistory(order, sourceTable, userId, now, status, cancelledBy) {
-        if (order.id === null || order.id === undefined) {
-            throw new Error('Technical id is missing; cannot archive order history');
-        }
-
+    async function archiveToHistory(
+        order,
+        sourceTable,
+        userId,
+        now,
+        status,
+        cancelledBy
+    ) {
+        /*
+         * Do not provide ID here.
+         *
+         * PostgreSQL generates OrderHistory.id using:
+         * orders_portal_orderhistory_id_seq.
+         *
+         * SupplierOrdersReprocess.id and OrderHistory.id are independent
+         * technical identifiers.
+         */
         const entry = {
-            ID: order.id,
             purchaseOrderNumber: order.purchaseOrderNumber,
             poLineNumber: order.poLineNumber,
             salesOrderNumber: order.salesOrderNumber,
@@ -810,6 +1098,7 @@ module.exports = cds.service.impl(async function () {
             octMaterialNumber: order.octMaterialNumber,
             vendorMaterialNumber: order.vendorMaterialNumber,
             status,
+            errorText: order.errorText,
             purchaseOrderDate: order.purchaseOrderDate,
             sourceTable,
             createdBy: userId,
@@ -824,6 +1113,21 @@ module.exports = cds.service.impl(async function () {
             entry.processedAt = now;
         }
 
-        await INSERT.into(OrderHistory).entries(entry);
+        const insertResult = await INSERT
+            .into(OrderHistory)
+            .entries(entry);
+
+        LOG.info(
+            `[HISTORY] archived, ` +
+            `sourceTable=${sourceTable}, ` +
+            `sourceTechnicalId=${order.id}, ` +
+            `supplierReferenceNumber=${order.supplierReferenceNumber}, ` +
+            `po=${order.purchaseOrderNumber}, ` +
+            `line=${order.poLineNumber}, ` +
+            `status=${status}, ` +
+            `affectedRows=${Number(insertResult)}`
+        );
+
+        return insertResult;
     }
 });
