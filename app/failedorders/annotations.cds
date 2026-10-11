@@ -279,8 +279,6 @@ annotate service.SupplierOrdersReprocess with {
     lockExpiresAt @UI.Hidden;
 
     // supplierReferenceNumber @UI.Hidden;
-
-    companyCode   @UI.Hidden;
     createdBy     @UI.Hidden;
     createdOn     @UI.Hidden;
     changedOn     @UI.Hidden;

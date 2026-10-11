@@ -23,8 +23,8 @@ entity SupplierOrdersReprocess {
         supplierName            : String(50)            @title: 'Vendor Name';
         country                 : String(3)             @title: 'Country';
         salesOrg                : String(4)             @title: 'Sales Org';
-        companyCode             : String(10)            @title: 'Company Code';
-        plant                   : String(10)            @title: 'Plant';
+        //companyCode             : String(10)            @title: 'Company Code';
+        //plant                   : String(10)            @title: 'Plant';
         octMaterialNumber       : String(18)            @title: 'OCT Material Number';
         vendorMaterialNumber    : String(35)            @title: 'Vendor Material Number';
         tdLine                  : String(500)           @title: 'TD Line';
@@ -55,8 +55,8 @@ entity OrderHistory {
         supplierName         : String(50)          @title: 'Vendor Name';
         country              : String(3)           @title: 'Country';
         salesOrg             : String(4)           @title: 'Sales Org';
-        companyCode          : String(10)          @title: 'Company Code';
-        plant                : String(10)          @title: 'Plant';
+        //companyCode          : String(10)          @title: 'Company Code';
+        //plant                : String(10)          @title: 'Plant';
         octMaterialNumber    : String(18)          @title: 'OCT Material Number';
         vendorMaterialNumber : String(35)          @title: 'Vendor Material Number';
         status               : OrderStatus         @title: 'Status';
