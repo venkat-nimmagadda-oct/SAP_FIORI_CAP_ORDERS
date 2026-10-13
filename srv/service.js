@@ -1093,8 +1093,6 @@ module.exports = cds.service.impl(async function () {
             supplierName: order.supplierName,
             country: order.country,
             salesOrg: order.salesOrg,
-            companyCode: order.companyCode,
-            plant: order.plant,
             octMaterialNumber: order.octMaterialNumber,
             vendorMaterialNumber: order.vendorMaterialNumber,
             status,
