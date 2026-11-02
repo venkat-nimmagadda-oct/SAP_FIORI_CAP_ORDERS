@@ -416,11 +416,15 @@ module.exports = cds.service.impl(async function () {
     // 3. READ AUTHORIZATION AND FAILED-QUEUE FILTERS
     // ==================================================
     this.before('READ', SupplierOrdersReprocess, (req) => {
+        applyLeadingZeroInsensitiveFilters(req);
         addFailedOrderStatusFilter(req.query);
         applySalesOrgFilter(req);
     });
 
-    this.before('READ', OrderHistory, applySalesOrgFilter);
+    this.before('READ', OrderHistory, (req) => {
+        applyLeadingZeroInsensitiveFilters(req);
+        applySalesOrgFilter(req);
+    });
 
     // ==================================================
     // 4. EXCEL EXPORT VALIDATION
@@ -713,6 +717,162 @@ module.exports = cds.service.impl(async function () {
     // ==================================================
     // 8. HELPERS
     // ==================================================
+
+    function applyLeadingZeroInsensitiveFilters(req) {
+        const where = req.query?.SELECT?.where;
+
+        if (!Array.isArray(where) || where.length === 0) {
+            return;
+        }
+
+        const supportedFields = new Set([
+            'supplier',
+            'poLineNumber',
+            'octMaterialNumber',
+            'salesOrderNumber'
+        ]);
+
+        let changed = false;
+
+        function normalizeValue(value) {
+            const text = String(value ?? '').trim();
+
+            if (!/^\d+$/.test(text)) {
+                return text;
+            }
+
+            /*
+             * Remove leading zeros while retaining one zero when the
+             * supplied value consists entirely of zeros.
+             *
+             * Examples:
+             * 0000310681 -> 310681
+             * 00010      -> 10
+             * 000        -> 0
+             */
+            return text.replace(/^0+(?=\d)/, '');
+        }
+
+        function createNormalizedColumnExpression(columnExpression) {
+            /*
+             * PostgreSQL expression:
+             *
+             * COALESCE(
+             *     NULLIF(LTRIM(column, '0'), ''),
+             *     '0'
+             * )
+             *
+             * LTRIM removes leading zeros from the stored value.
+             * NULLIF and COALESCE ensure an all-zero stored value,
+             * such as "000", is normalized to "0".
+             */
+            return {
+                func: 'coalesce',
+                args: [
+                    {
+                        func: 'nullif',
+                        args: [
+                            {
+                                func: 'ltrim',
+                                args: [
+                                    columnExpression,
+                                    { val: '0' }
+                                ]
+                            },
+                            { val: '' }
+                        ]
+                    },
+                    { val: '0' }
+                ]
+            };
+        }
+
+        function processExpression(expression) {
+            if (!Array.isArray(expression)) {
+                return;
+            }
+
+            for (
+                let index = 0;
+                index < expression.length;
+                index += 1
+            ) {
+                const token = expression[index];
+
+                if (Array.isArray(token)) {
+                    processExpression(token);
+                    continue;
+                }
+
+                if (token?.xpr && Array.isArray(token.xpr)) {
+                    processExpression(token.xpr);
+                }
+
+                const left = expression[index];
+                const operator = expression[index + 1];
+                const right = expression[index + 2];
+
+                const reference = left?.ref;
+
+                const fieldName =
+                    Array.isArray(reference) && reference.length
+                        ? reference[reference.length - 1]
+                        : null;
+
+                const isEqualityOperator =
+                    operator === '=' || operator === '==';
+
+                const hasSearchValue =
+                    right &&
+                    Object.prototype.hasOwnProperty.call(
+                        right,
+                        'val'
+                    );
+
+                if (
+                    !supportedFields.has(fieldName) ||
+                    !isEqualityOperator ||
+                    !hasSearchValue
+                ) {
+                    continue;
+                }
+
+                const originalValue = String(
+                    right.val ?? ''
+                ).trim();
+
+                /*
+                 * Apply normalization only to numeric searches.
+                 * Alphanumeric material identifiers remain unchanged.
+                 */
+                if (!/^\d+$/.test(originalValue)) {
+                    continue;
+                }
+
+                expression[index] =
+                    createNormalizedColumnExpression(left);
+
+                expression[index + 2] = {
+                    val: normalizeValue(originalValue)
+                };
+
+                changed = true;
+                index += 2;
+            }
+        }
+
+        processExpression(where);
+
+        if (changed) {
+            LOG.info(
+                `[LEADING_ZERO_FILTER] ` +
+                `entity=${req.target?.name || 'unknown'}, ` +
+                `user=${req.user?.id || 'unknown'}, ` +
+                `where=${JSON.stringify(where)}`
+            );
+        }
+    }
+
     function addFailedOrderStatusFilter(query) {
         return query.where([
             { ref: ['status'] },
@@ -1068,6 +1228,48 @@ module.exports = cds.service.impl(async function () {
         );
     }
 
+    function normalizeTimestamp(value, fallback) {
+        if (!value) {
+            return fallback;
+        }
+
+        if (value instanceof Date) {
+            return Number.isNaN(value.getTime())
+                ? fallback
+                : value;
+        }
+
+        const originalValue = String(value).trim();
+
+        /*
+         * Convert an Oracle-style fractional-second placeholder
+         * into valid milliseconds.
+         *
+         * Example:
+         * 2026-10-15T12:01:29.FF3Z
+         * becomes:
+         * 2026-10-15T12:01:29.000Z
+         */
+        const normalizedValue = originalValue
+            .replace(/\.FF\d+Z$/i, '.000Z')
+            .replace(/\.FF\d+$/i, '.000');
+
+        const parsedDate = new Date(normalizedValue);
+
+        if (Number.isNaN(parsedDate.getTime())) {
+            LOG.warn(
+                `[TIMESTAMP_NORMALIZATION] Invalid timestamp value, ` +
+                `originalValue=${originalValue}, ` +
+                `normalizedValue=${normalizedValue}, ` +
+                `fallback=${fallback.toISOString()}`
+            );
+
+            return fallback;
+        }
+
+        return parsedDate;
+    }
+
     async function archiveToHistory(
         order,
         sourceTable,
@@ -1077,15 +1279,39 @@ module.exports = cds.service.impl(async function () {
         cancelledBy
     ) {
         /*
-         * Do not provide ID here.
+         * Generate an independent OrderHistory technical ID from the
+         * PostgreSQL sequence.
          *
-         * PostgreSQL generates OrderHistory.id using:
-         * orders_portal_orderhistory_id_seq.
-         *
-         * SupplierOrdersReprocess.id and OrderHistory.id are independent
-         * technical identifiers.
+         * Do not reuse SupplierOrdersReprocess.id because the failed-order
+         * and history tables have independent technical identifiers.
          */
+        const db = await cds.connect.to('db');
+
+        const sequenceResult = await db.run(
+            `SELECT nextval(
+                'public.orders_portal_orderhistory_id_seq'::regclass
+            ) AS id`
+        );
+
+        const sequenceRow = Array.isArray(sequenceResult)
+            ? sequenceResult[0]
+            : sequenceResult;
+
+        const historyId = Number(sequenceRow?.id);
+
+        if (!Number.isSafeInteger(historyId) || historyId <= 0) {
+            throw Object.assign(
+                new Error(
+                    'Could not generate OrderHistory technical ID'
+                ),
+                {
+                    code: 'HISTORY_ID_GENERATION_FAILED'
+                }
+            );
+        }
+
         const entry = {
+            ID: historyId,
             purchaseOrderNumber: order.purchaseOrderNumber,
             poLineNumber: order.poLineNumber,
             salesOrderNumber: order.salesOrderNumber,
@@ -1099,8 +1325,8 @@ module.exports = cds.service.impl(async function () {
             errorText: order.errorText,
             purchaseOrderDate: order.purchaseOrderDate,
             sourceTable,
-            createdBy: userId,
-            createdOn: now
+            createdBy: order.createdBy || userId,
+            createdOn: normalizeTimestamp(order.createdOn, now)
         };
 
         if (cancelledBy) {
@@ -1111,12 +1337,20 @@ module.exports = cds.service.impl(async function () {
             entry.processedAt = now;
         }
 
+        LOG.info(
+            `[HISTORY_INSERT] generatedHistoryId=${historyId}, ` +
+            `entryID=${entry.ID}, ` +
+            `po=${order.purchaseOrderNumber}, ` +
+            `line=${order.poLineNumber}`
+        );
+
         const insertResult = await INSERT
             .into(OrderHistory)
             .entries(entry);
 
         LOG.info(
             `[HISTORY] archived, ` +
+            `historyId=${historyId}, ` +
             `sourceTable=${sourceTable}, ` +
             `sourceTechnicalId=${order.id}, ` +
             `supplierReferenceNumber=${order.supplierReferenceNumber}, ` +

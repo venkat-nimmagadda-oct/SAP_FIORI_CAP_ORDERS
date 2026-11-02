@@ -651,7 +651,7 @@ sap.ui.define([
 
         const oPayload = {
             /*
-             * CAP replaces the placeholder with the authenticated user in
+             * CAP replaces the placeholder with the authenticated user
              * before CREATE UserFilterVariants.
              */
             userId: "CURRENT_USER",
@@ -692,24 +692,172 @@ sap.ui.define([
         return oContext;
     }
 
-    async function loadVariants(oModel) {
-        const oListBinding = oModel.bindList("/UserFilterVariants");
-        const aContexts = await oListBinding.requestContexts(0, 100);
+    async function loadVariantEntries(oModel) {
+        const oListBinding = oModel.bindList(
+            "/UserFilterVariants",
+            null,
+            [],
+            [],
+            {
+                $$updateGroupId: "$direct"
+            }
+        );
 
-        const aVariants = aContexts
+        const aContexts =
+            await oListBinding.requestContexts(0, 100);
+
+        const aEntries = aContexts
             .map(function (oContext) {
-                return oContext.getObject();
+                return {
+                    context: oContext,
+                    variant: oContext.getObject()
+                };
             })
-            .filter(function (oVariant) {
-                return oVariant && oVariant.viewName === VIEW_NAME;
+            .filter(function (oEntry) {
+                return (
+                    oEntry.variant &&
+                    oEntry.variant.viewName === VIEW_NAME
+                );
             });
 
         console.log(
-            "[SAVED_VIEWS] Loaded variants:",
-            aVariants
+            "[SAVED_VIEWS] Loaded variant entries:",
+            aEntries.map(function (oEntry) {
+                return oEntry.variant;
+            })
         );
 
-        return aVariants;
+        return aEntries;
+    }
+
+    async function loadVariants(oModel) {
+        const aEntries = await loadVariantEntries(oModel);
+
+        return aEntries.map(function (oEntry) {
+            return oEntry.variant;
+        });
+    }
+
+    function normalizeVariantName(sName) {
+        return String(sName || "")
+            .trim()
+            .toLocaleLowerCase();
+    }
+
+    async function findVariantsByName(
+        oModel,
+        sVariantName
+    ) {
+        const sNormalizedName =
+            normalizeVariantName(sVariantName);
+
+        const aEntries = await loadVariantEntries(oModel);
+
+        return aEntries.filter(function (oEntry) {
+            return (
+                normalizeVariantName(
+                    oEntry.variant.variantName
+                ) === sNormalizedName
+            );
+        });
+    }
+
+    function confirmAction(sMessage, sTitle) {
+        return new Promise(function (resolve) {
+            MessageBox.confirm(sMessage, {
+                title: sTitle,
+                emphasizedAction: MessageBox.Action.OK,
+                actions: [
+                    MessageBox.Action.OK,
+                    MessageBox.Action.CANCEL
+                ],
+                onClose: function (sAction) {
+                    resolve(
+                        sAction === MessageBox.Action.OK
+                    );
+                }
+            });
+        });
+    }
+
+    async function updateVariantContext(
+        oContext,
+        oPayload
+    ) {
+        if (
+            !oContext ||
+            typeof oContext.setProperty !== "function"
+        ) {
+            throw new Error(
+                "Saved view context is not available for update."
+            );
+        }
+
+        await oContext.setProperty(
+            "variantName",
+            oPayload.variantName
+        );
+
+        await oContext.setProperty(
+            "filterJSON",
+            oPayload.filterJSON
+        );
+
+        await oContext.setProperty(
+            "isDefault",
+            Boolean(oPayload.isDefault)
+        );
+    }
+
+    async function deleteVariantContext(oContext) {
+        if (
+            !oContext ||
+            typeof oContext.delete !== "function"
+        ) {
+            throw new Error(
+                "Saved view context is not available for deletion."
+            );
+        }
+
+        await oContext.delete("$direct");
+    }
+
+    function getSelectedVariantEntry(oList) {
+        const oSelectedItem = oList.getSelectedItem();
+
+        if (!oSelectedItem) {
+            return null;
+        }
+
+        const aCustomData =
+            oSelectedItem.getCustomData();
+
+        if (!aCustomData.length) {
+            return null;
+        }
+
+        return aCustomData[0].getValue();
+    }
+
+    function addVariantItems(oList, aEntries) {
+        oList.removeAllItems();
+
+        aEntries.forEach(function (oEntry) {
+            const oVariant = oEntry.variant;
+
+            oList.addItem(new StandardListItem({
+                title: oVariant.variantName,
+                description:
+                    oVariant.isDefault ? "Default" : "",
+                type: "Active",
+                customData: [
+                    new CustomData({
+                        key: "variantEntry",
+                        value: oEntry
+                    })
+                ]
+            }));
+        });
     }
 
     return {
@@ -719,20 +867,23 @@ sap.ui.define([
 
             if (!oFilterBar) {
                 MessageBox.error(
-                    "Filter bar could not be found. Cannot save view."
+                    "Filter bar could not be found. " +
+                    "Cannot save view."
                 );
                 return;
             }
 
             if (!oModel) {
                 MessageBox.error(
-                    "OData model is not available. Cannot save view."
+                    "OData model is not available. " +
+                    "Cannot save view."
                 );
                 return;
             }
 
             const oNameInput = new Input({
-                placeholder: "Example: All Orders - US Completed",
+                placeholder:
+                    "Example: All Orders - US Completed",
                 width: "100%"
             });
 
@@ -753,7 +904,9 @@ sap.ui.define([
                     type: "Emphasized",
                     press: async function () {
                         const sVariantName =
-                            (oNameInput.getValue() || "").trim();
+                            (
+                                oNameInput.getValue() || ""
+                            ).trim();
 
                         if (!sVariantName) {
                             MessageToast.show(
@@ -764,16 +917,70 @@ sap.ui.define([
 
                         try {
                             const oPayload =
-                                await buildPayload(sVariantName);
+                                await buildPayload(
+                                    sVariantName
+                                );
 
-                            await createVariant(oModel, oPayload);
+                            const aMatches =
+                                await findVariantsByName(
+                                    oModel,
+                                    sVariantName
+                                );
 
-                            MessageToast.show("View saved.");
+                            if (aMatches.length > 1) {
+                                MessageBox.warning(
+                                    "More than one saved view " +
+                                    "already uses this name. " +
+                                    "Use Apply View to delete " +
+                                    "the unwanted duplicates " +
+                                    "before saving again."
+                                );
+                                return;
+                            }
+
+                            if (aMatches.length === 1) {
+                                const bOverwrite =
+                                    await confirmAction(
+                                        "A saved view named \"" +
+                                        sVariantName +
+                                        "\" already exists. " +
+                                        "Replace it with the " +
+                                        "current filters and " +
+                                        "table layout?",
+                                        "Replace Saved View"
+                                    );
+
+                                if (!bOverwrite) {
+                                    return;
+                                }
+
+                                await updateVariantContext(
+                                    aMatches[0].context,
+                                    oPayload
+                                );
+
+                                MessageToast.show(
+                                    "Existing view updated."
+                                );
+                            } else {
+                                await createVariant(
+                                    oModel,
+                                    oPayload
+                                );
+
+                                MessageToast.show(
+                                    "View saved."
+                                );
+                            }
+
                             oDialog.close();
                         } catch (oError) {
                             MessageBox.error(
                                 "Could not save view: " +
-                                (oError.message || oError)
+                                (
+                                    oError.message ||
+                                    oError
+                                )
                             );
                         }
                     }
@@ -798,23 +1005,28 @@ sap.ui.define([
 
             if (!oFilterBar) {
                 MessageBox.error(
-                    "Filter bar could not be found. Cannot apply view."
+                    "Filter bar could not be found. " +
+                    "Cannot manage saved views."
                 );
                 return;
             }
 
             if (!oModel) {
                 MessageBox.error(
-                    "OData model is not available. Cannot apply view."
+                    "OData model is not available. " +
+                    "Cannot manage saved views."
                 );
                 return;
             }
 
             try {
-                const aVariants = await loadVariants(oModel);
+                let aEntries =
+                    await loadVariantEntries(oModel);
 
-                if (!aVariants.length) {
-                    MessageToast.show("No saved views found.");
+                if (!aEntries.length) {
+                    MessageToast.show(
+                        "No saved views found."
+                    );
                     return;
                 }
 
@@ -822,103 +1034,232 @@ sap.ui.define([
                     mode: "SingleSelectMaster"
                 });
 
-                aVariants.forEach(function (oVariant) {
-                    oList.addItem(new StandardListItem({
-                        title: oVariant.variantName,
-                        description: oVariant.isDefault ? "Default" : "",
-                        type: "Active",
-                        customData: [
-                            new CustomData({
-                                key: "variant",
-                                value: oVariant
-                            })
-                        ]
-                    }));
-                });
+                addVariantItems(oList, aEntries);
 
                 const oDialog = new Dialog({
-                    title: "Apply Saved View",
-                    contentWidth: "460px",
-                    contentHeight: "360px",
+                    title: "Manage Saved Views",
+                    contentWidth: "520px",
+                    contentHeight: "380px",
                     content: [oList],
-                    beginButton: new Button({
-                        text: "Apply",
-                        type: "Emphasized",
-                        press: async function () {
-                            const oSelectedItem =
-                                oList.getSelectedItem();
+                    buttons: [
+                        new Button({
+                            text: "Apply",
+                            type: "Emphasized",
+                            press: async function () {
+                                const oEntry =
+                                    getSelectedVariantEntry(
+                                        oList
+                                    );
 
-                            if (!oSelectedItem) {
-                                MessageToast.show(
-                                    "Please select a saved view."
+                                if (!oEntry) {
+                                    MessageToast.show(
+                                        "Please select a " +
+                                        "saved view."
+                                    );
+                                    return;
+                                }
+
+                                const oVariant =
+                                    oEntry.variant;
+
+                                let oState = {};
+
+                                try {
+                                    oState = JSON.parse(
+                                        oVariant.filterJSON ||
+                                        "{}"
+                                    );
+                                } catch (oError) {
+                                    MessageBox.error(
+                                        "Saved view is not " +
+                                        "valid JSON."
+                                    );
+                                    return;
+                                }
+
+                                console.log(
+                                    "[SAVED_VIEWS] " +
+                                    "Selected variant:",
+                                    oVariant
                                 );
-                                return;
+
+                                const bFilterApplied =
+                                    applyFilterStateWithoutSearch(
+                                        oState.filters || {}
+                                    );
+
+                                const bTableApplied =
+                                    await applyTableStateBestEffort(
+                                        oState.tableState ||
+                                        null
+                                    );
+
+                                await triggerFilterSearch();
+
+                                if (
+                                    bFilterApplied &&
+                                    bTableApplied
+                                ) {
+                                    MessageToast.show(
+                                        "Saved filters and " +
+                                        "table layout applied."
+                                    );
+                                } else if (
+                                    bFilterApplied
+                                ) {
+                                    MessageToast.show(
+                                        "Saved filters applied. " +
+                                        "Table layout could not " +
+                                        "be fully restored."
+                                    );
+                                } else {
+                                    MessageBox.warning(
+                                        "The saved view could " +
+                                        "not be fully applied."
+                                    );
+                                }
+
+                                oDialog.close();
                             }
+                        }),
+                        new Button({
+                            text: "Update",
+                            press: async function () {
+                                const oEntry =
+                                    getSelectedVariantEntry(
+                                        oList
+                                    );
 
-                            const oVariant =
-                                oSelectedItem
-                                    .getCustomData()[0]
-                                    .getValue();
+                                if (!oEntry) {
+                                    MessageToast.show(
+                                        "Please select a " +
+                                        "saved view."
+                                    );
+                                    return;
+                                }
 
-                            let oState = {};
+                                const sVariantName =
+                                    oEntry.variant
+                                        .variantName;
 
-                            try {
-                                oState = JSON.parse(
-                                    oVariant.filterJSON || "{}"
-                                );
-                            } catch (oError) {
-                                MessageBox.error(
-                                    "Saved view is not valid JSON."
-                                );
-                                return;
+                                const bConfirmed =
+                                    await confirmAction(
+                                        "Replace \"" +
+                                        sVariantName +
+                                        "\" with the current " +
+                                        "filters and table " +
+                                        "layout?",
+                                        "Update Saved View"
+                                    );
+
+                                if (!bConfirmed) {
+                                    return;
+                                }
+
+                                try {
+                                    const oPayload =
+                                        await buildPayload(
+                                            sVariantName
+                                        );
+
+                                    await updateVariantContext(
+                                        oEntry.context,
+                                        oPayload
+                                    );
+
+                                    MessageToast.show(
+                                        "Saved view updated."
+                                    );
+
+                                    oDialog.close();
+                                } catch (oError) {
+                                    MessageBox.error(
+                                        "Could not update " +
+                                        "saved view: " +
+                                        (
+                                            oError.message ||
+                                            oError
+                                        )
+                                    );
+                                }
                             }
+                        }),
+                        new Button({
+                            text: "Delete",
+                            type: "Reject",
+                            press: async function () {
+                                const oEntry =
+                                    getSelectedVariantEntry(
+                                        oList
+                                    );
 
-                            console.log(
-                                "[SAVED_VIEWS] Selected variant:",
-                                oVariant
-                            );
+                                if (!oEntry) {
+                                    MessageToast.show(
+                                        "Please select a " +
+                                        "saved view."
+                                    );
+                                    return;
+                                }
 
-                            console.log(
-                                "[SAVED_VIEWS] Parsed saved state:",
-                                oState
-                            );
+                                const sVariantName =
+                                    oEntry.variant
+                                        .variantName;
 
-                            const bFilterApplied =
-                                applyFilterStateWithoutSearch(
-                                    oState.filters || {}
-                                );
+                                const bConfirmed =
+                                    await confirmAction(
+                                        "Delete the saved view \"" +
+                                        sVariantName +
+                                        "\"? This action cannot " +
+                                        "be undone.",
+                                        "Delete Saved View"
+                                    );
 
-                            const bTableApplied =
-                                await applyTableStateBestEffort(
-                                    oState.tableState || null
-                                );
+                                if (!bConfirmed) {
+                                    return;
+                                }
 
-                            await triggerFilterSearch();
+                                try {
+                                    await deleteVariantContext(
+                                        oEntry.context
+                                    );
 
-                            if (bFilterApplied && bTableApplied) {
-                                MessageToast.show(
-                                    "Saved filters and table layout applied."
-                                );
-                            } else if (bFilterApplied) {
-                                MessageToast.show(
-                                    "Saved filters applied. " +
-                                    "Table layout could not be fully restored."
-                                );
-                            } else {
-                                MessageBox.warning(
-                                    "The saved view could not be fully applied."
-                                );
+                                    MessageToast.show(
+                                        "Saved view deleted."
+                                    );
+
+                                    aEntries =
+                                        await loadVariantEntries(
+                                            oModel
+                                        );
+
+                                    if (!aEntries.length) {
+                                        oDialog.close();
+                                        return;
+                                    }
+
+                                    addVariantItems(
+                                        oList,
+                                        aEntries
+                                    );
+                                } catch (oError) {
+                                    MessageBox.error(
+                                        "Could not delete " +
+                                        "saved view: " +
+                                        (
+                                            oError.message ||
+                                            oError
+                                        )
+                                    );
+                                }
                             }
-
-                            oDialog.close();
-                        }
-                    }),
-                    endButton: new Button({
-                        text: "Cancel",
-                        press: function () {
-                            oDialog.close();
-                        }
-                    }),
+                        }),
+                        new Button({
+                            text: "Cancel",
+                            press: function () {
+                                oDialog.close();
+                            }
+                        })
+                    ],
                     afterClose: function () {
                         oDialog.destroy();
                     }

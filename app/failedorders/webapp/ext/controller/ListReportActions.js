@@ -11,6 +11,19 @@ sap.ui.define([
     const CANCEL_ACTION =
         "SupplierOrderService.cancel";
 
+    /*
+     * CPI processing is asynchronous after HTTP 202.
+     * These refreshes only re-read the list. They do not resend.
+     */
+    const RESEND_REFRESH_DELAYS_MS = [
+        0,
+        2000,
+        5000,
+        10000
+    ];
+
+    const CANCEL_REFRESH_DELAY_MS = 300;
+
     let bActionInProgress = false;
 
     function resolveContexts(
@@ -41,6 +54,28 @@ sap.ui.define([
         return [];
     }
 
+    function getModelFromContexts(
+        aContexts
+    ) {
+        if (
+            !Array.isArray(aContexts) ||
+            aContexts.length === 0
+        ) {
+            return null;
+        }
+
+        const oContext = aContexts[0];
+
+        if (
+            !oContext ||
+            typeof oContext.getModel !== "function"
+        ) {
+            return null;
+        }
+
+        return oContext.getModel();
+    }
+
     function showConfirmation(
         sMessage,
         sActionButton,
@@ -49,15 +84,12 @@ sap.ui.define([
         return new Promise(function (resolve) {
             MessageBox.confirm(sMessage, {
                 title: sTitle,
-
                 actions: [
                     sActionButton,
                     MessageBox.Action.CANCEL
                 ],
-
                 emphasizedAction:
                     sActionButton,
-
                 onClose:
                     function (sSelectedAction) {
                         resolve(
@@ -76,14 +108,11 @@ sap.ui.define([
         return new Promise(function (resolve) {
             MessageBox.success(sMessage, {
                 title: sTitle,
-
                 actions: [
                     MessageBox.Action.OK
                 ],
-
                 emphasizedAction:
                     MessageBox.Action.OK,
-
                 onClose: function () {
                     resolve();
                 }
@@ -107,14 +136,11 @@ sap.ui.define([
                 {
                     title:
                         "Action Partially Completed",
-
                     actions: [
                         MessageBox.Action.OK
                     ],
-
                     emphasizedAction:
                         MessageBox.Action.OK,
-
                     onClose: function () {
                         resolve();
                     }
@@ -157,24 +183,32 @@ sap.ui.define([
     }
 
     function refreshModel(
-        aContexts
+        oModel
     ) {
-        if (
-            !Array.isArray(aContexts) ||
-            aContexts.length === 0
-        ) {
-            return;
-        }
-
-        const oModel =
-            aContexts[0].getModel();
-
         if (
             oModel &&
             typeof oModel.refresh === "function"
         ) {
             oModel.refresh();
         }
+    }
+
+    function scheduleModelRefreshes(
+        oModel,
+        aRefreshDelays
+    ) {
+        if (
+            !oModel ||
+            !Array.isArray(aRefreshDelays)
+        ) {
+            return;
+        }
+
+        aRefreshDelays.forEach(function (iDelayMs) {
+            window.setTimeout(function () {
+                refreshModel(oModel);
+            }, iDelayMs);
+        });
     }
 
     function getConfirmationMessage(
@@ -234,6 +268,26 @@ sap.ui.define([
                         "No Orders Selected"
                 }
             );
+
+            return;
+        }
+
+        /*
+         * Capture the model before refreshes invalidate or replace
+         * any of the selected row contexts.
+         */
+        const oModel =
+            getModelFromContexts(aContexts);
+
+        if (!oModel) {
+            MessageBox.error(
+                "The OData model is not available.",
+                {
+                    title:
+                        mSettings.errorTitle
+                }
+            );
+
             return;
         }
 
@@ -284,8 +338,6 @@ sap.ui.define([
                 aResults.length -
                 iSuccessCount;
 
-            refreshModel(aContexts);
-
             if (iFailureCount === 0) {
                 await showSuccess(
                     getSuccessMessage(
@@ -296,6 +348,20 @@ sap.ui.define([
                     mSettings.successTitle
                 );
 
+                /*
+                 * Refresh only after the user closes the popup.
+                 *
+                 * For Resend, repeat the refresh because CPI returns
+                 * HTTP 202 before final processing is complete.
+                 *
+                 * For Cancel, one refresh is sufficient because the
+                 * CAP cancellation transaction completes synchronously.
+                 */
+                scheduleModelRefreshes(
+                    oModel,
+                    mSettings.refreshDelays
+                );
+
                 return;
             }
 
@@ -304,6 +370,11 @@ sap.ui.define([
                     iSuccessCount,
                     iFailureCount,
                     mSettings.partialActionLabel
+                );
+
+                scheduleModelRefreshes(
+                    oModel,
+                    mSettings.refreshDelays
                 );
 
                 return;
@@ -387,7 +458,14 @@ sap.ui.define([
                     errorMessage:
                         "The selected message(s) " +
                         "could not be submitted " +
-                        "for reprocessing."
+                        "for reprocessing.",
+
+                    /*
+                     * Re-read Failed Orders immediately and again
+                     * while CPI completes asynchronous processing.
+                     */
+                    refreshDelays:
+                        RESEND_REFRESH_DELAYS_MS
                 }
             );
         },
@@ -435,7 +513,15 @@ sap.ui.define([
 
                     errorMessage:
                         "The selected message(s) " +
-                        "could not be cancelled."
+                        "could not be cancelled.",
+
+                    /*
+                     * Cancel is completed inside the CAP request,
+                     * so only one refresh is required.
+                     */
+                    refreshDelays: [
+                        CANCEL_REFRESH_DELAY_MS
+                    ]
                 }
             );
         }
